@@ -51,6 +51,15 @@ export function openScreen(route: Route) {
   notify()
 }
 
+// Call once at startup. When the app opens straight onto a screen (a link, or a reload of a
+// fresh tab), slip a Home entry underneath it, so the back gesture returns to Home instead of leaving the app.
+export function putHomeUnderScreen() {
+  const route = parseRoute(window.location.hash)
+  if (route.name === 'home' || (window.history.state as { openedFromHome?: boolean } | null)?.openedFromHome) return
+  window.history.replaceState(null, '', href({ name: 'home' }))
+  openScreen(route)
+}
+
 // Back to Home. Going back keeps history tidy, so the back gesture doesn't return to the closed screen.
 // After a reload or a link opened straight onto a screen, there's no Home entry to go back to, so replace instead.
 export function goHome() {
