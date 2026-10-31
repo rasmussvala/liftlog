@@ -4,6 +4,8 @@ import { homeOverview, type HomeItem } from '../../../application/homeOverview'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day } from '../../../domain/entry'
 import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from '../format'
+import { Kg } from '../Kg'
+import { openScreen } from '../router'
 
 // The user's exercises, each with its latest entry, current estimated 1RM and change.
 export function HomeScreen({ store }: { store: LogbookStore }) {
@@ -14,9 +16,9 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
     <main className="pt-12 pb-32">
       <div className="flex items-center justify-between pr-3 pl-5">
         <h1 className="text-large-title">Lifts</h1>
-        {/* No action yet: Settings comes in a later ticket. */}
         <button
           aria-label="Settings"
+          onClick={() => openScreen({ name: 'settings' })}
           className="grid size-11 place-items-center rounded-full text-tint transition-opacity duration-150 ease-out active:opacity-50 active:duration-0"
         >
           <Settings size={26} strokeWidth={1.75} aria-hidden />
@@ -47,7 +49,9 @@ function ExerciseRow({ item, today }: { item: HomeItem; today: Day }) {
 
   return (
     <li>
-      <button className="flex min-h-11 w-full items-center gap-4 px-5 py-3 text-left transition-colors duration-200 ease-out active:bg-surface-raised active:duration-0">
+      <button
+        onClick={() => openScreen({ name: 'exercise', id: exercise.id })}
+        className="flex min-h-11 w-full items-center gap-4 px-5 py-3 text-left transition-colors duration-200 ease-out active:bg-surface-raised active:duration-0">
         <div className="min-w-0 flex-1">
           <div className="truncate text-headline">{exercise.name}</div>
           <div className="truncate text-footnote text-label-secondary tabular-nums">
@@ -67,7 +71,7 @@ function ExerciseRow({ item, today }: { item: HomeItem; today: Day }) {
           <div className="text-right tabular-nums">
             <div className="text-title">
               {formatEstimate(current.estimated1RM)}
-              <span className="text-subhead text-label-secondary"> kg</span>
+              <Kg />
             </div>
             {change && (
               <div className={`text-footnote ${change.rising ? 'text-tint' : 'text-label-secondary'}`}>{change.text}</div>

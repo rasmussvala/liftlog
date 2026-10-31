@@ -48,6 +48,16 @@ Sizes are in `rem`, so the user's text size setting still scales them. The font 
 
 Spacing uses Tailwind's default 4px scale (`p-5` = 20px). Pages use `px-5` and cards use `p-5`.
 
+## Motion
+
+| Class | Value | Use for |
+|---|---|---|
+| `animate-screen-in` | Slide in from the right, 340ms, `ease-drawer` | A screen opening on top of Home |
+| `animate-fade-in` | Fade in, 200ms, ease-out | The reduced-motion stand-in for `animate-screen-in` |
+| `ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | Drawers and screens sliding in |
+
+Pair them: `motion-safe:animate-screen-in motion-reduce:animate-fade-in`.
+
 ## Icons
 
 Icons come only from [Lucide](https://lucide.dev) (`lucide-react`). SF Symbols aren't allowed: Apple's licence limits them to Apple platforms' native apps, not the web.

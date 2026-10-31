@@ -5,6 +5,8 @@ import type { Exercise } from '../domain/exercise'
 export interface LogbookStore {
   // In the order they were added.
   listExercises(): Promise<Exercise[]>
+  // Undefined when there's no exercise with this id.
+  getExercise(id: number): Promise<Exercise | undefined>
   // One exercise's entries, oldest day first.
   listEntries(exerciseId: number): Promise<Entry[]>
   // Rejects a second entry for the same exercise and day (ADR 0001).

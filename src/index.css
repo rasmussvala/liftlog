@@ -46,6 +46,22 @@
   --radius-card: 1.5rem;
   --radius-control: 1rem;
   --radius-full: 9999px;
+
+  /* A screen opening on top of Home: slides in from the right, or fades in under reduced motion. */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-screen-in: screen-in 340ms var(--ease-drawer);
+  --animate-fade-in: fade-in 200ms ease-out;
+
+  @keyframes screen-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
 @layer base {
