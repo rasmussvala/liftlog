@@ -12,5 +12,48 @@
     "max-depth": ["error", { "max": 4 }],
     "max-params": ["error", { "max": 4 }],
     "import/no-cycle": "error"
-  }
+  },
+  // Layers: imports only point inward. See docs/architecture.md.
+  "overrides": [
+    {
+      "files": ["src/domain/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/application", "**/application/**", "**/adapters", "**/adapters/**"],
+                "message": "domain/ must not import outer layers."
+              },
+              {
+                "group": ["dexie", "dexie-*", "react", "react-*", "recharts"],
+                "message": "domain/ must not depend on frameworks."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/application/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/adapters", "**/adapters/**"],
+                "message": "application/ must not import adapters. Depend on a port instead."
+              },
+              {
+                "group": ["dexie", "dexie-*", "react", "react-*", "recharts"],
+                "message": "application/ must not depend on frameworks."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }
