@@ -44,6 +44,7 @@ export function createDexieLogbookStore(name = 'liftlog'): LogbookStore {
   const db = openDb(name)
   return {
     listExercises: () => db.exercises.orderBy('id').toArray(),
+    getExercise: (id) => db.exercises.get(id),
     listEntries: (exerciseId) =>
       db.entries.where('[exerciseId+day]').between([exerciseId, Dexie.minKey], [exerciseId, Dexie.maxKey]).toArray(),
     addEntry: async (entry) => {

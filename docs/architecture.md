@@ -36,7 +36,7 @@ src/
 | `logbookStore.ts` | `LogbookStore`: the only port |
 | `homeOverview.ts` | `homeOverview(store)`: one item per exercise with its current estimate, for Home |
 | `exercises.ts` | `listExercises`, `addExercise`, `renameExercise`, `deleteExercise` (refused if it has entries) |
-| `entries.ts` | `exerciseLog(store, id) → { entries, progress }`, `saveEntry(store, input, today)`, `deleteEntry` |
+| `entries.ts` | `exerciseLog(store, id) → { exercise, entries } \| 'not-found'` (entries newest first, each with its estimated 1RM), `saveEntry(store, input, today)`, `deleteEntry` |
 | `backup.ts` | `exportBackup(store)`, `importBackup(store, json)` |
 
 Use cases are plain functions that take the store as their first argument. Anything time-dependent takes `today` as a parameter.
@@ -46,11 +46,12 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | Module | What it does |
 |---|---|
 | `dexie/dexieLogbookStore.ts` | The Dexie database and `LogbookStore` implementation. The only module that imports Dexie (its test file does too) |
-| `ui/router.ts` | Hash routing: `Route`, `useRoute()`, `href(route)` ([ADR 0003](adr/0003-hash-routing.md)) |
+| `ui/router.ts` | Hash routing: `Route`, `useRoute()`, `href(route)`, `openScreen(route)`, `goHome()` ([ADR 0003](adr/0003-hash-routing.md)) |
+| `ui/PushedScreen.tsx` | The layout for a screen opened from Home: slide-in, "‹ Lifts" back button, large title |
 | `ui/screens/HomeScreen.tsx` | The user's exercises |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change; `localToday()` |
-| `ui/screens/ExerciseScreen.tsx` | Chart, today's entry form, recent entries |
-| `ui/screens/SettingsScreen.tsx` | Manage exercises, export/import |
+| `ui/screens/ExerciseScreen.tsx` | History, newest first. Later: chart and today's entry form |
+| `ui/screens/SettingsScreen.tsx` | WIP. Later: manage exercises, export/import |
 | `ui/ProgressChart.tsx` | The only file that imports Recharts |
 | `ui/backupFile.ts` | Download a backup, read a picked file |
 
