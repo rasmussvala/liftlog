@@ -1,5 +1,5 @@
 // Hash routing (ADR 0003): #/, #/exercise/<id>, #/settings.
-import { useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 
 export type Route = { name: 'home' } | { name: 'exercise'; id: number } | { name: 'settings' }
 
@@ -42,7 +42,14 @@ function subscribe(listener: () => void) {
 export function useRoute(): Route {
   // Snapshot the hash string, not a parsed object, so React can compare snapshots.
   const hash = useSyncExternalStore(subscribe, () => window.location.hash)
-  return useMemo(() => parseRoute(hash), [hash])
+  const route = useMemo(() => parseRoute(hash), [hash])
+
+  // An unknown route shows Home: tidy the URL to match.
+  useEffect(() => {
+    if (route.name === 'home' && hash !== '' && hash !== href(route)) goHome()
+  }, [route, hash])
+
+  return route
 }
 
 // Opens a screen on top of Home. Marks the history entry, so goHome() knows it can just go back.

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { LogbookStore } from './application/logbookStore'
 import { ExerciseScreen } from './adapters/ui/screens/ExerciseScreen'
 import { HomeScreen } from './adapters/ui/screens/HomeScreen'
 import { SettingsScreen } from './adapters/ui/screens/SettingsScreen'
-import { goHome, href, useRoute } from './adapters/ui/router'
+import { useRoute } from './adapters/ui/router'
 
 function App({ store }: { store: LogbookStore }) {
   const route = useRoute()
@@ -15,11 +15,6 @@ function App({ store }: { store: LogbookStore }) {
     setPrevious(route.name)
     setSlideIn(previous === 'home')
   }
-
-  // An unknown route shows Home: tidy the URL to match.
-  useEffect(() => {
-    if (route.name === 'home' && window.location.hash !== href(route) && window.location.hash !== '') goHome()
-  }, [route])
 
   return (
     <>
