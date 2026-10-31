@@ -14,7 +14,24 @@
     "import/no-cycle": "error"
   },
   // Layers: imports only point inward. See docs/architecture.md.
+  // Later overrides win, so the general rule comes first.
   "overrides": [
+    {
+      "files": ["src/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["dexie"],
+                "message": "Only the Dexie adapter (src/adapters/dexie/) imports Dexie. Screens may use dexie-react-hooks."
+              }
+            ]
+          }
+        ]
+      }
+    },
     {
       "files": ["src/domain/**"],
       "rules": {
@@ -54,6 +71,27 @@
           }
         ]
       }
+    },
+    {
+      // Use-case tests run on the real Dexie store (ADR 0004), so they may import the adapter.
+      "files": ["src/application/**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["dexie", "dexie-*", "react", "react-*", "recharts"],
+                "message": "Reach storage through the Dexie adapter, not Dexie itself."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/adapters/dexie/**"],
+      "rules": { "no-restricted-imports": "off" }
     }
   ]
 }

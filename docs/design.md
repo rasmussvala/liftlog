@@ -48,6 +48,15 @@ Sizes are in `rem`, so the user's text size setting still scales them. The font 
 
 Spacing uses Tailwind's default 4px scale (`p-5` = 20px). Pages use `px-5` and cards use `p-5`.
 
+## Icons
+
+Icons come only from [Lucide](https://lucide.dev) (`lucide-react`). SF Symbols aren't allowed: Apple's licence limits them to Apple platforms' native apps, not the web.
+
+- Size icons 24–28px, inside a tap target of at least 44px (`size-11`).
+- Stroke width 1.75 for outline icons such as the Settings gear (26px), 2.25 for the + on a filled button (28px).
+- Icons inherit `currentColor`, so colour them with a text token (`text-tint`, `text-on-tint`).
+- Mark them `aria-hidden` and put an `aria-label` on the button.
+
 ## iPhone rules
 
 - **Text fields must be at least 16px.** Below that, iOS Safari zooms the page when the field is focused. The base CSS already forces `input`, `select` and `textarea` to at least 16px, so never set a smaller size on them. Never fix it with `maximum-scale=1` in the viewport tag either, because that also blocks pinch-to-zoom.
