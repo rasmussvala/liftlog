@@ -24,9 +24,9 @@ src/
 
 | Module | Exports |
 |---|---|
-| `exercise.ts` | `Exercise`, `validateExerciseName(name)` |
+| `exercise.ts` | `Exercise`, `STARTER_EXERCISES`, `validateExerciseName(name)` |
 | `entry.ts` | `Entry`, `Day` (`"2026-10-31"`, the user's local date), `validateEntry({ weightKg, reps })` |
-| `progress.ts` | `estimate1RM(weightKg, reps)`, `progress(entries) → { points, best }` |
+| `progress.ts` | `estimate1RM(weightKg, reps)`, `currentEstimate(entries) → { latest, estimated1RM, change }`, `progress(entries) → { points, best }` |
 | `backup.ts` | `BackupData`, `serializeBackup(data)`, `parseBackup(json)`: checks the file and upgrades old versions |
 
 ### application/
@@ -34,6 +34,7 @@ src/
 | Module | Exports |
 |---|---|
 | `logbookStore.ts` | `LogbookStore`: the only port |
+| `homeOverview.ts` | `homeOverview(store)`: one item per exercise with its current estimate, for Home |
 | `exercises.ts` | `listExercises`, `addExercise`, `renameExercise`, `deleteExercise` (refused if it has entries) |
 | `entries.ts` | `exerciseLog(store, id) → { entries, progress }`, `saveEntry(store, input, today)`, `deleteEntry` |
 | `backup.ts` | `exportBackup(store)`, `importBackup(store, json)` |
@@ -44,9 +45,10 @@ Use cases are plain functions that take the store as their first argument. Anyth
 
 | Module | What it does |
 |---|---|
-| `dexie/dexieLogbookStore.ts` | The Dexie database and `LogbookStore` implementation. The only file that imports Dexie |
+| `dexie/dexieLogbookStore.ts` | The Dexie database and `LogbookStore` implementation. The only module that imports Dexie (its test file does too) |
 | `ui/router.ts` | Hash routing: `Route`, `useRoute()`, `href(route)` ([ADR 0003](adr/0003-hash-routing.md)) |
 | `ui/screens/HomeScreen.tsx` | The user's exercises |
+| `ui/format.ts` | Display formatting: day labels, weights, 1RM, change; `localToday()` |
 | `ui/screens/ExerciseScreen.tsx` | Chart, today's entry form, recent entries |
 | `ui/screens/SettingsScreen.tsx` | Manage exercises, export/import |
 | `ui/ProgressChart.tsx` | The only file that imports Recharts |
@@ -55,5 +57,6 @@ Use cases are plain functions that take the store as their first argument. Anyth
 ## Testing
 
 - `domain/`: plain unit tests.
-- `application/`: tests against the real Dexie store on `fake-indexeddb`. No mocks of the store.
+- `application/`: tests against the real Dexie store on `fake-indexeddb`. No mocks of the store. These test files are the one place `application/` may import an adapter, and lint allows it.
+- `adapters/dexie/`: tests for schema upgrades, which need a raw old-version database.
 - `adapters/ui/`: no tests for now. Screens stay thin, so there's little logic in them to test.

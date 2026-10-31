@@ -52,6 +52,15 @@
   :root {
     color-scheme: light dark;
     -webkit-text-size-adjust: 100%;
+    /* No grey flash on tap: buttons show their own active: state instead. */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Instant taps (no double-tap-zoom delay) and no text selection on long-press. */
+  button {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   body {
