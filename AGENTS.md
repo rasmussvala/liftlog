@@ -14,3 +14,11 @@ Issues and specs live in GitHub Issues on `rasmussvala/liftlog`. See `docs/agent
 ### Domain docs
 
 Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## Architecture
+
+Code is split into `domain/`, `application/` and `adapters/`, and lint enforces which may import which. See `docs/architecture.md` before adding code.
+
+## Design
+
+Before any UI work, read `docs/design.md`. Use only its colour, text and radius tokens: Tailwind's defaults are switched off.

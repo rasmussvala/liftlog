@@ -18,8 +18,8 @@ export default defineConfig({
         name: 'liftlog',
         short_name: 'liftlog',
         description: 'Personal 1RM tracker',
-        theme_color: '#18181b',
-        background_color: '#18181b',
+        theme_color: '#15161c',
+        background_color: '#15161c',
         display: 'standalone',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
