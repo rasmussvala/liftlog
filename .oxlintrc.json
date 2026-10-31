@@ -73,13 +73,17 @@
       }
     },
     {
-      // Use-case tests run on the real Dexie store (ADR 0004), so they may import the adapter.
+      // Use-case tests run on the real Dexie store (ADR 0004), so they may import that adapter, and no other.
       "files": ["src/application/**/*.test.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",
           {
             "patterns": [
+              {
+                "group": ["**/adapters", "**/adapters/**", "!**/adapters/dexie/dexieLogbookStore"],
+                "message": "Use-case tests may import only the Dexie adapter."
+              },
               {
                 "group": ["dexie", "dexie-*", "react", "react-*", "recharts"],
                 "message": "Reach storage through the Dexie adapter, not Dexie itself."

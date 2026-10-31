@@ -26,3 +26,15 @@ describe('upgrading from version 1', () => {
     expect(exercises.map((e) => e.name)).toEqual(['Front squat'])
   })
 })
+
+describe('LogbookStore', () => {
+  it('rejects a second entry for the same exercise and day', async () => {
+    const store = createDexieLogbookStore(`test-${crypto.randomUUID()}`)
+    const [squat, bench] = await store.listExercises()
+    await store.addEntry({ exerciseId: squat.id, day: '2026-10-01', weightKg: 100, reps: 5 })
+
+    await expect(store.addEntry({ exerciseId: squat.id, day: '2026-10-01', weightKg: 110, reps: 3 })).rejects.toThrow()
+    // Same day on another exercise is fine.
+    await expect(store.addEntry({ exerciseId: bench.id, day: '2026-10-01', weightKg: 80, reps: 5 })).resolves.toBeDefined()
+  })
+})

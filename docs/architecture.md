@@ -45,7 +45,7 @@ Use cases are plain functions that take the store as their first argument. Anyth
 
 | Module | What it does |
 |---|---|
-| `dexie/dexieLogbookStore.ts` | The Dexie database and `LogbookStore` implementation. The only file that imports Dexie |
+| `dexie/dexieLogbookStore.ts` | The Dexie database and `LogbookStore` implementation. The only module that imports Dexie (its test file does too) |
 | `ui/router.ts` | Hash routing: `Route`, `useRoute()`, `href(route)` ([ADR 0003](adr/0003-hash-routing.md)) |
 | `ui/screens/HomeScreen.tsx` | The user's exercises |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change; `localToday()` |

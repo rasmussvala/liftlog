@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, Settings } from 'lucide-react'
 import { homeOverview, type HomeItem } from '../../../application/homeOverview'
 import type { LogbookStore } from '../../../application/logbookStore'
+import type { Day } from '../../../domain/entry'
 import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from '../format'
 
 // The user's exercises, each with its latest entry, current estimated 1RM and change.
@@ -32,7 +33,7 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
       {/* WIP: the add-exercise flow isn't designed yet, so this does nothing. */}
       <button
         aria-label="Add exercise (not built yet)"
-        className="fixed right-5 bottom-[calc(env(safe-area-inset-bottom)+20px)] z-10 grid size-14 place-items-center rounded-full bg-tint text-on-tint shadow-lg transition-transform duration-150 ease-out active:scale-[0.94] motion-reduce:active:scale-100"
+        className="fixed right-5 bottom-[calc(env(safe-area-inset-bottom)+20px)] z-10 grid size-14 place-items-center rounded-full bg-tint text-on-tint shadow-lg transition-transform duration-150 ease-out motion-safe:active:scale-[0.94]"
       >
         <Plus size={28} strokeWidth={2.25} aria-hidden />
       </button>
@@ -40,7 +41,7 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
   )
 }
 
-function ExerciseRow({ item, today }: { item: HomeItem; today: string }) {
+function ExerciseRow({ item, today }: { item: HomeItem; today: Day }) {
   const { exercise, current } = item
   const change = current?.change === undefined ? undefined : formatChange(current.change)
 
