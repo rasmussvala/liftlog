@@ -4,6 +4,7 @@ import { exerciseLog, type LogEntry } from '../../../application/entries'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day } from '../../../domain/entry'
 import { dayLabel, formatEstimate, formatWeight, localToday } from '../format'
+import { Kg } from '../Kg'
 import { PushedScreen } from '../PushedScreen'
 import { goHome } from '../router'
 
@@ -41,13 +42,13 @@ function HistoryRow({ item: { entry, estimated1RM }, today }: { item: LogEntry; 
     <li className="col-span-full grid min-h-11 grid-cols-subgrid items-baseline border-b border-separator py-3 last:border-b-0">
       <span className="text-right text-body">
         {formatWeight(entry.weightKg)}
-        <span className="text-subhead text-label-secondary"> kg</span>
+        <Kg />
       </span>
       <span className="pl-2 text-body text-label-secondary">× {entry.reps}</span>
       <span aria-hidden />
       <span className="pl-4 text-right text-headline">
         {formatEstimate(estimated1RM)}
-        <span className="text-subhead text-label-secondary"> kg</span>
+        <Kg />
       </span>
       <span className="pr-5 pl-4 text-right text-subhead text-label-secondary">{dayLabel(entry.day, today)}</span>
     </li>

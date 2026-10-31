@@ -49,6 +49,7 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/router.ts` | Hash routing: `Route`, `useRoute()`, `href(route)`, `openScreen(route)`, `goHome()` ([ADR 0003](adr/0003-hash-routing.md)) |
 | `ui/PushedScreen.tsx` | The layout for a screen opened from Home: slide-in, "‹ Lifts" back button, large title |
 | `ui/screens/HomeScreen.tsx` | The user's exercises |
+| `ui/Kg.tsx` | The grey " kg" unit after a weight |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change; `localToday()` |
 | `ui/screens/ExerciseScreen.tsx` | History, newest first. Later: chart and today's entry form |
 | `ui/screens/SettingsScreen.tsx` | WIP. Later: manage exercises, export/import |

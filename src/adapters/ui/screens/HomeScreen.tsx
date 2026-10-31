@@ -4,6 +4,7 @@ import { homeOverview, type HomeItem } from '../../../application/homeOverview'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day } from '../../../domain/entry'
 import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from '../format'
+import { Kg } from '../Kg'
 import { openScreen } from '../router'
 
 // The user's exercises, each with its latest entry, current estimated 1RM and change.
@@ -70,7 +71,7 @@ function ExerciseRow({ item, today }: { item: HomeItem; today: Day }) {
           <div className="text-right tabular-nums">
             <div className="text-title">
               {formatEstimate(current.estimated1RM)}
-              <span className="text-subhead text-label-secondary"> kg</span>
+              <Kg />
             </div>
             {change && (
               <div className={`text-footnote ${change.rising ? 'text-tint' : 'text-label-secondary'}`}>{change.text}</div>
