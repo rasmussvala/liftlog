@@ -7,4 +7,4 @@ A personal one-rep-max tracker. A phone-first PWA you add to your home screen.
 - Per-exercise chart and history
 - Local-only storage, with JSON export/import for backup
 
-Stack: Vite, React, TypeScript, Tailwind, Dexie, Recharts, vite-plugin-pwa. Deployed to GitHub Pages.
+Stack: Vite, React, TypeScript, Tailwind, Dexie, vite-plugin-pwa. Deployed to GitHub Pages.

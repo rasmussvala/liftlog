@@ -1,6 +1,6 @@
 # Clean Architecture with one store port
 
-The code is split into three layers, and imports only point inward: `domain/` (pure rules) ← `application/` (use cases) ← `adapters/` (Dexie, React, Recharts, browser APIs). Lint rules enforce this, so a wrong import fails CI. Most code is written by agents, so a fixed place for each kind of code, enforced by lint, matters more to us than saving a few files.
+The code is split into three layers, and imports only point inward: `domain/` (pure rules) ← `application/` (use cases) ← `adapters/` (Dexie, React, browser APIs). Lint rules enforce this, so a wrong import fails CI. Most code is written by agents, so a fixed place for each kind of code, enforced by lint, matters more to us than saving a few files.
 
 The application reaches storage through a single port, `LogbookStore`. Dexie is its only adapter. The port exists to keep `application/` free of Dexie, not to let us swap databases. Tests run the real Dexie adapter on `fake-indexeddb` instead of an in-memory store, so no second copy of the storage rules (one entry per day, replacing everything on import) has to be kept in sync.
 
