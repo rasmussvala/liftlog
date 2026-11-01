@@ -11,4 +11,6 @@ export interface LogbookStore {
   listEntries(exerciseId: number): Promise<Entry[]>
   // Rejects a second entry for the same exercise and day (ADR 0001).
   addEntry(entry: Omit<Entry, 'id'>): Promise<Entry>
+  // Changes what an entry records. Its exercise and day never change.
+  updateEntry(id: number, values: Pick<Entry, 'weightKg' | 'reps'>): Promise<void>
 }
