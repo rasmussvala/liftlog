@@ -1,12 +1,24 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string
+}
+const commit = process.env.GITHUB_SHA?.slice(0, 7) ??
+  `${execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim()}-local`
 
 // https://vite.dev/config/
 export default defineConfig({
   // Served from https://rasmussvala.github.io/liftlog/
   base: '/liftlog/',
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+    __APP_COMMIT__: JSON.stringify(commit),
+  },
   plugins: [
     react(),
     tailwindcss(),
