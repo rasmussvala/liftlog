@@ -1,12 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, Settings } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { deleteExercise } from '../../../application/exercises'
 import { homeOverview, type HomeItem } from '../../../application/homeOverview'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day } from '../../../domain/entry'
 import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from '../format'
 import { Kg } from '../Kg'
 import { openScreen } from '../router'
+import { SwipeRow } from '../SwipeRow'
 import { ExercisePage } from './ExercisePage'
 
 // The user's exercises, each with its latest entry, current estimated 1RM and change.
@@ -14,8 +16,42 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
   const items = useLiveQuery(() => homeOverview(store), [store])
   const today = localToday()
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<HomeItem>()
+  const [retiring, setRetiring] = useState<HomeItem>()
+  const [collapsingId, setCollapsingId] = useState<number>()
   // The exercise just added: its row scrolls into view and lights up briefly.
   const [flash, setFlash] = useState<number>()
+
+  const visibleItems = items?.length
+    ? [...items, ...(retiring && !items.some((item) => item.exercise.id === retiring.exercise.id) ? [retiring] : [])]
+    : retiring
+      ? [retiring]
+      : items
+
+  const deletePrompt = (item: HomeItem) => {
+    const { name } = item.exercise
+    const count = item.entryCount
+    const detail = count === 0 ? '' : ` and its ${count} ${count === 1 ? 'entry' : 'entries'}`
+    return window.confirm(`Delete ${name}${detail}? This can't be undone.`)
+  }
+
+  const deleteConfirmed = async (item: HomeItem) => {
+    setRetiring(item)
+    setCollapsingId(item.exercise.id)
+    try {
+      await deleteExercise(store, item.exercise.id)
+    } catch (error) {
+      console.error('Deleting the exercise failed', error)
+      setRetiring(undefined)
+      setCollapsingId(undefined)
+    }
+  }
+
+  const deleteFromRow = (item: HomeItem) => {
+    if (!deletePrompt(item)) return false
+    void deleteConfirmed(item)
+    return true
+  }
 
   useEffect(() => {
     if (flash === undefined) return
@@ -37,15 +73,28 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
       </div>
       <p className="mt-1 px-5 text-subhead text-label-secondary">Estimated 1RM</p>
 
-      {items?.length === 0 ? (
+      {visibleItems?.length === 0 ? (
         <div className="mt-24 px-10 text-center">
           <p className="text-title">No exercises</p>
           <p className="mt-2 text-subhead text-label-secondary">Tap + to add one.</p>
         </div>
       ) : (
         <ul className="mt-4">
-          {items?.map((item) => (
-            <ExerciseRow key={item.exercise.id} item={item} today={today} lit={item.exercise.id === flash} />
+          {visibleItems?.map((item) => (
+            <ExerciseRow
+              key={item.exercise.id}
+              item={item}
+              today={today}
+              lit={item.exercise.id === flash}
+              collapsing={item.exercise.id === collapsingId}
+              onTap={() => openScreen({ name: 'exercise', id: item.exercise.id })}
+              onEdit={() => setEditing(item)}
+              onDelete={() => deleteFromRow(item)}
+              onCollapsed={() => {
+                setRetiring(undefined)
+                setCollapsingId(undefined)
+              }}
+            />
           ))}
         </ul>
       )}
@@ -58,12 +107,24 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
         <Plus size={28} strokeWidth={2.25} aria-hidden />
       </button>
 
-      {adding && (
+      {(adding || editing) && (
         <ExercisePage
           store={store}
-          names={items?.map((item) => item.exercise.name) ?? []}
+          exercise={editing?.exercise}
+          names={(items ?? [])
+            .filter((item) => item.exercise.id !== editing?.exercise.id)
+            .map((item) => item.exercise.name)}
+          confirmDelete={editing ? () => deletePrompt(editing) : undefined}
+          onDeleted={(id) => {
+            const deleted = items?.find((item) => item.exercise.id === id) ?? editing
+            if (deleted) {
+              setRetiring(deleted)
+              setCollapsingId(id)
+            }
+          }}
           onClosed={(addedId) => {
             setAdding(false)
+            setEditing(undefined)
             setFlash(addedId)
           }}
         />
@@ -72,28 +133,39 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
   )
 }
 
-function ExerciseRow({ item, today, lit }: { item: HomeItem; today: Day; lit: boolean }) {
+function ExerciseRow({
+  item,
+  today,
+  lit,
+  collapsing,
+  onTap,
+  onEdit,
+  onDelete,
+  onCollapsed,
+}: {
+  item: HomeItem
+  today: Day
+  lit: boolean
+  collapsing: boolean
+  onTap: () => void
+  onEdit: () => void
+  onDelete: () => boolean
+  onCollapsed: () => void
+}) {
   const { exercise, current } = item
   const change = current?.change === undefined ? undefined : formatChange(current.change)
 
-  // Just added: bring the row into view. Also runs if the row mounts already lit.
-  const row = useRef<HTMLLIElement>(null)
-  useEffect(() => {
-    if (!lit) return
-    const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    row.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'nearest' })
-  }, [lit])
-
   return (
-    // Lit up: tint at once, then fades back once it's no longer lit. The scroll margin keeps a
-    // scrolled-to row clear of the + button.
-    <li
-      ref={row}
-      className={`scroll-mb-[calc(env(safe-area-inset-bottom)+96px)] transition-colors ease-out ${lit ? 'bg-tint/15 duration-0' : 'duration-700'}`}
+    <SwipeRow
+      label={exercise.name}
+      onTap={onTap}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onCollapsed={onCollapsed}
+      collapsing={collapsing}
+      flash={lit}
     >
-      <button
-        onClick={() => openScreen({ name: 'exercise', id: exercise.id })}
-        className="flex min-h-11 w-full items-center gap-4 px-5 py-3 text-left transition-colors duration-200 ease-out active:bg-surface-raised active:duration-0">
+      <div className="flex w-full items-center gap-4">
         <div className="min-w-0 flex-1">
           <div className="truncate text-headline">{exercise.name}</div>
           <div className="truncate text-footnote text-label-secondary tabular-nums">
@@ -120,8 +192,7 @@ function ExerciseRow({ item, today, lit }: { item: HomeItem; today: Day; lit: bo
             )}
           </div>
         )}
-      </button>
-      <div aria-hidden className="mx-5 h-px bg-separator" />
-    </li>
+      </div>
+    </SwipeRow>
   )
 }

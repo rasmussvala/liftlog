@@ -10,6 +10,9 @@ export interface LogbookStore {
   // Stores a new exercise at the end (the position after the last one) and returns it.
   // Takes the name as given: the use case checks it.
   addExercise(name: string): Promise<Exercise>
+  renameExercise(id: number, name: string): Promise<void>
+  // Removes an exercise and its entries atomically. An unknown id does nothing.
+  deleteExercise(id: number): Promise<void>
   // One exercise's entries, oldest day first.
   listEntries(exerciseId: number): Promise<Entry[]>
   // Rejects a second entry for the same exercise and day (ADR 0001).
