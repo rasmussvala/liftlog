@@ -2,9 +2,9 @@
   <rect width="512" height="512" rx="96" fill="#15161c"/>
   <g fill="#f5f6f8">
     <rect x="96" y="244" width="320" height="24" rx="6"/>
-    <rect x="140" y="200" width="28" height="112" rx="8"/>
+    <rect x="128" y="200" width="40" height="112" rx="10"/>
     <rect x="152" y="176" width="40" height="160" rx="10"/>
     <rect x="320" y="176" width="40" height="160" rx="10"/>
-    <rect x="344" y="200" width="28" height="112" rx="8"/>
+    <rect x="344" y="200" width="40" height="112" rx="10"/>
   </g>
 </svg>
