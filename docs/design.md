@@ -53,10 +53,15 @@ Spacing uses Tailwind's default 4px scale (`p-5` = 20px). Pages use `px-5` and c
 | Class | Value | Use for |
 |---|---|---|
 | `animate-screen-in` | Slide in from the right, 340ms, `ease-drawer` | A screen opening on top of Home |
-| `animate-fade-in` | Fade in, 200ms, ease-out | The reduced-motion stand-in for `animate-screen-in` |
+| `animate-fade-in` | Fade in, 200ms, ease-out | The reduced-motion stand-in for `animate-screen-in` and `animate-cover-in` |
+| `animate-cover-in` | Slide up from the bottom, 400ms, `ease-drawer` | A full-screen page opening over a screen, such as the entry page |
+| `animate-cover-out` | Slide back down, 260ms, `ease-drawer` | That page closing: a bit faster than it arrives |
+| `animate-fade-out` | Fade out, 200ms, ease-out | The reduced-motion stand-in for `animate-cover-out` |
 | `ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | Drawers and screens sliding in |
 
 Pair them: `motion-safe:animate-screen-in motion-reduce:animate-fade-in`.
+
+Pressables scale to 0.97 the moment a finger touches down and ease back over 150ms: use `press` from `src/adapters/ui/press.ts`.
 
 ## Icons
 

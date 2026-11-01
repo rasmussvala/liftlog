@@ -1,5 +1,5 @@
 // Display formatting for screens. Today's date comes from the local clock here, never from domain/.
-import type { Day } from '../../domain/entry'
+import type { Day, RepsProblem, WeightProblem } from '../../domain/entry'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -28,3 +28,15 @@ export function formatChange(change: number): { text: string; rising: boolean } 
   const rounded = Math.round(change * 10) / 10
   return { text: `${rounded < 0 ? '−' : '+'}${Math.abs(rounded).toFixed(1)}`, rising: rounded > 0 }
 }
+
+// Short warnings that say only what's wrong, for the entry page's estimate line.
+const WARNINGS: Record<WeightProblem | RepsProblem, string> = {
+  'not-a-number': 'Numbers only',
+  'too-heavy': 'Max 999.99 kg',
+  'too-many-decimals': 'Max 2 decimals',
+  'not-positive': 'Weight must be more than 0',
+  'not-whole': 'Whole reps only',
+  'too-many': 'Max 12 reps',
+  'too-few': 'At least 1 rep',
+}
+export const warningText = (problem: WeightProblem | RepsProblem) => WARNINGS[problem]
