@@ -13,6 +13,7 @@ The tokens live in [`src/index.css`](../src/index.css). Tailwind's default colou
 | `surface-raised` | `#eef0f6` | `#232832` | Rows and fields inside a card |
 | `label` | `#15161c` | `#f5f6f8` | Main text |
 | `label-secondary` | `#5f6573` | `#9aa0ad` | Descriptions, dates, units |
+| `shadow` | `#15161c` | `#000000` | Shadows on raised content |
 | `separator` | `#e2e5ef` | `#2d3240` | Dividers and borders |
 | `tint` | `#4f5fd6` | `#91a4ff` | Buttons, links, selected state, chart line |
 | `on-tint` | `#ffffff` | `#15161c` | Text on a `tint` background |
