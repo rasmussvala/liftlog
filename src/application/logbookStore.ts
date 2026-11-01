@@ -13,4 +13,6 @@ export interface LogbookStore {
   addEntry(entry: Omit<Entry, 'id'>): Promise<Entry>
   // Changes what an entry records. Its exercise and day never change.
   updateEntry(id: number, values: Pick<Entry, 'weightKg' | 'reps'>): Promise<void>
+  // Removes an entry. An unknown id does nothing.
+  deleteEntry(id: number): Promise<void>
 }

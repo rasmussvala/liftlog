@@ -1,6 +1,6 @@
 import { ChevronRight, Minus, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { saveEntry } from '../../../application/entries'
+import { deleteEntry, saveEntry } from '../../../application/entries'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day, Entry } from '../../../domain/entry'
 import { CoverPage } from '../CoverPage'
@@ -14,48 +14,65 @@ interface EntryPageProps {
   exerciseId: number
   // The exercise's entries, newest first.
   entries: readonly Entry[]
-  // The day the page opens on. Log entry opens it on today.
+  // The day the page opens on. Log entry opens it on today, a history row on that entry's day.
   startDay: Day
+  // Opened from a history row: no day row, so editing never moves an entry to another day.
+  dayLocked: boolean
   today: Day
-  // The page has left the screen, after a save (with the saved day) or a cancel.
+  // The page has left the screen, after a save (with the saved day), a delete or a cancel.
   onClosed: (savedDay: Day | undefined) => void
 }
 
-// Log an entry for any past day, or edit the one a picked day already has.
-export function EntryPage({ store, exerciseId, entries, startDay, today, onClosed }: EntryPageProps) {
-  const form = useEntryDraft(entries, startDay)
+// Log an entry for any past day, edit the one a picked day already has, or delete it.
+export function EntryPage({ store, exerciseId, entries, startDay, dayLocked, today, onClosed }: EntryPageProps) {
+  // The entries as they were when a save or delete started: set while it runs, then kept by the exit.
+  // So the page doesn't change (title, values, Delete) as the store updates under it.
+  const [frozen, setFrozen] = useState<readonly Entry[]>()
+  // Set once Save, Delete or Cancel starts the exit. Undefined while the page is open.
+  const [exit, setExit] = useState<{ savedDay?: Day; entries: readonly Entry[] }>()
+  const form = useEntryDraft(exit?.entries ?? frozen ?? entries, startDay)
   const title = form.editing ? `Edit ${dayLabel(form.day, today)}` : 'New entry'
-  // Set once Save or Cancel starts the exit. Undefined while the page is open. Keeps the title, which
-  // would otherwise flip to "Edit …" as the saved entry arrives while the page slides away.
-  const [exit, setExit] = useState<{ savedDay?: Day; title: string }>()
-  const [saving, setSaving] = useState(false)
+  const busy = frozen !== undefined && !exit
+
+  // Runs a save or delete, then closes the page. On failure the page stays open, so nothing typed is lost.
+  const storeAndClose = async (action: 'Saving' | 'Deleting', run: () => Promise<unknown>, savedDay?: Day) => {
+    setFrozen(entries)
+    try {
+      await run()
+    } catch (error) {
+      console.error(`${action} the entry failed`, error)
+      setFrozen(undefined)
+      return false
+    }
+    setExit({ savedDay, entries })
+    return true
+  }
 
   const save = async () => {
-    if (saving || exit) return
+    if (busy || exit) return
     // Tapping a dimmed Save shows what's wrong.
     if (!form.values) return form.leaveBoth()
-    setSaving(true)
-    try {
-      await saveEntry(store, { exerciseId, day: form.day, ...form.values }, today)
-    } catch (error) {
-      // The page stays open, so nothing typed is lost.
-      console.error('Saving the entry failed', error)
-      return
-    } finally {
-      setSaving(false)
+    const values = form.values
+    if (await storeAndClose('Saving', () => saveEntry(store, { exerciseId, day: form.day, ...values }, today), form.day)) {
+      navigator.vibrate?.(10)
     }
-    navigator.vibrate?.(10)
-    setExit({ savedDay: form.day, title })
   }
-  // While a save runs, Cancel waits: the entry is being stored either way.
-  const cancel = () => !saving && setExit((e) => e ?? { title })
+  // The browser's own confirm(): on iPhone it's a real iOS alert. OK deletes and closes, Cancel does nothing.
+  const remove = () => {
+    const entry = form.editing
+    if (busy || exit || !entry) return
+    if (!window.confirm(`Delete the entry for ${dayLabel(entry.day, today)}?`)) return
+    void storeAndClose('Deleting', () => deleteEntry(store, entry.id))
+  }
+  // While a save or delete runs, Cancel waits: the change is happening either way.
+  const cancel = () => !busy && setExit((e) => e ?? { entries })
 
   const header = (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-1">
       <button onClick={cancel} className={`min-h-11 justify-self-start text-body text-tint ${press}`}>
         Cancel
       </button>
-      <h2 className="text-headline">{exit?.title ?? title}</h2>
+      <h2 className="text-headline">{title}</h2>
       {/* Dimmed while invalid, but still tappable: it shows the warnings. */}
       <button
         onClick={save}
@@ -69,8 +86,17 @@ export function EntryPage({ store, exerciseId, entries, startDay, today, onClose
 
   return (
     <CoverPage header={header} closing={exit !== undefined} onGone={() => onClosed(exit?.savedDay)}>
-      <DayRow day={form.day} today={today} onPick={form.pickDay} />
+      {/* Locked, the title already names the day, so there's no day row and no note about it. */}
+      {!dayLocked && <DayRow day={form.day} today={today} onPick={form.pickDay} />}
       <EntryFields form={form} />
+      {form.editing && (
+        <button
+          onClick={remove}
+          className={`mt-6 min-h-11 w-full rounded-control bg-surface py-3 text-body text-destructive ${press}`}
+        >
+          Delete entry
+        </button>
+      )}
     </CoverPage>
   )
 }
