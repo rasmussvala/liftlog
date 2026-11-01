@@ -79,7 +79,7 @@ function ExerciseRow({ item, today }: { item: HomeItem; today: Day }) {
           </div>
         )}
       </button>
-      <div aria-hidden className="ml-5 h-px bg-separator" />
+      <div aria-hidden className="mx-5 h-px bg-separator" />
     </li>
   )
 }
