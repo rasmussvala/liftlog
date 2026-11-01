@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { addExercise } from '../../../application/exercises'
 import type { LogbookStore } from '../../../application/logbookStore'
 import { MAX_EXERCISE_NAME, validateExerciseName } from '../../../domain/exercise'
@@ -22,14 +22,6 @@ export function ExercisePage({ store, names, onClosed }: ExercisePageProps) {
   // Set once Add or Cancel starts the exit. Undefined while the page is open.
   const [exit, setExit] = useState<{ addedId?: number }>()
   const busy = frozenNames !== undefined && !exit
-
-  // Open the keyboard at once. This runs inside the tap on +, which iOS needs to show the keyboard.
-  // preventScroll, because the page still sits below the screen before it slides up, and iOS would
-  // otherwise scroll everything up to reach the field.
-  const field = useRef<HTMLInputElement>(null)
-  useLayoutEffect(() => {
-    field.current?.focus({ preventScroll: true })
-  }, [])
 
   const check = validateExerciseName(name, frozenNames ?? names)
   // Blank shows no hint: the empty field already says what to do.
@@ -86,7 +78,6 @@ export function ExercisePage({ store, names, onClosed }: ExercisePageProps) {
         >
           {/* No "Name" in the label or placeholder: Safari would offer contact AutoFill. */}
           <input
-            ref={field}
             aria-label="Exercise"
             aria-invalid={check.problem === 'taken'}
             autoComplete="off"

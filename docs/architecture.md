@@ -55,7 +55,7 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change, entry warnings; `localToday()` |
 | `ui/screens/ExerciseScreen.tsx` | Progress chart, then the Log entry button, then history, newest first. A history row opens its entry to edit or delete |
 | `ui/screens/EntryPage.tsx` | Log, edit or delete an entry, on a `CoverPage`. Opened from a history row, the day is locked |
-| `ui/screens/ExercisePage.tsx` | New exercise: one name field on a `CoverPage`, with the keyboard up as it opens |
+| `ui/screens/ExercisePage.tsx` | New exercise: one name field on a `CoverPage` |
 | `ui/screens/useEntryDraft.ts` | The entry page's form state: typed text, placeholders, steppers, warnings |
 | `ui/screens/SettingsScreen.tsx` | WIP. Later: export/import |
 | `ui/ProgressChart.tsx` | The progress chart, hand-drawn SVG with no chart library: tap or slide to read an entry |
