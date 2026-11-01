@@ -37,16 +37,22 @@ export function EntryPage({ store, exerciseId, entries, startDay, today, onClose
     setSaving(true)
     try {
       await saveEntry(store, { exerciseId, day: form.day, ...form.values }, today)
+    } catch (error) {
+      // The page stays open, so nothing typed is lost.
+      console.error('Saving the entry failed', error)
+      return
     } finally {
       setSaving(false)
     }
     navigator.vibrate?.(10)
     setExit({ savedDay: form.day, title })
   }
+  // While a save runs, Cancel waits: the entry is being stored either way.
+  const cancel = () => !saving && setExit((e) => e ?? { title })
 
   const header = (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-1">
-      <button onClick={() => setExit((e) => e ?? { title })} className={`min-h-11 justify-self-start text-body text-tint ${press}`}>
+      <button onClick={cancel} className={`min-h-11 justify-self-start text-body text-tint ${press}`}>
         Cancel
       </button>
       <h2 className="text-headline">{exit?.title ?? title}</h2>
@@ -84,6 +90,7 @@ function EntryFields({ form }: { form: EntryDraft }) {
           onBlur={() => form.leave('weight')}
           onStep={form.stepWeight}
           canLess={form.canLessWeight}
+          canMore={form.canMoreWeight}
         />
         <NumberField
           name="Reps"
@@ -128,11 +135,11 @@ interface NumberFieldProps {
   onBlur: () => void
   onStep: (sign: 1 | -1) => void
   canLess: boolean
-  canMore?: boolean
+  canMore: boolean
 }
 
 // − on the left, the value and unit in the middle at the same large size ("117.5 kg"), + on the right.
-function NumberField({ name, unit, inputMode, value, placeholder, flagged, onChange, onBlur, onStep, canLess, canMore = true }: NumberFieldProps) {
+function NumberField({ name, unit, inputMode, value, placeholder, flagged, onChange, onBlur, onStep, canLess, canMore }: NumberFieldProps) {
   const stepper = `flex size-12 shrink-0 items-center justify-center rounded-full bg-surface-raised text-tint disabled:opacity-30 ${press}`
   return (
     <div className={`flex items-center gap-2 rounded-card bg-surface p-3 ${flagged ? 'ring-2 ring-label-secondary' : ''}`}>

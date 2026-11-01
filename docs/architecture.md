@@ -49,7 +49,7 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/router.ts` | Hash routing: `Route`, `useRoute()`, `href(route)`, `openScreen(route)`, `goHome()` ([ADR 0003](adr/0003-hash-routing.md)) |
 | `ui/PushedScreen.tsx` | The layout for a screen opened from Home: slide-in, "‹ Lifts" back button, large title |
 | `ui/CoverPage.tsx` | A full-screen page over a screen: slides up, header with its own buttons, no drag to dismiss |
-| `ui/press.ts` | `press`: the touch-down scale every pressable uses |
+| `ui/press.ts` | `press`: the touch-down scale for pressables (the entry page and Log entry use it) |
 | `ui/screens/HomeScreen.tsx` | The user's exercises |
 | `ui/Kg.tsx` | The grey " kg" unit after a weight |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change, entry warnings; `localToday()` |

@@ -51,10 +51,6 @@
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --animate-screen-in: screen-in 340ms var(--ease-drawer);
   --animate-fade-in: fade-in 200ms ease-out;
-  /* A full-screen page over a screen (the entry page): up from the bottom, back down a bit faster. */
-  --animate-cover-in: cover-in 400ms var(--ease-drawer);
-  --animate-cover-out: cover-out 260ms var(--ease-drawer) forwards;
-  --animate-fade-out: fade-out 200ms ease-out forwards;
 
   @keyframes screen-in {
     from {
@@ -63,21 +59,6 @@
   }
   @keyframes fade-in {
     from {
-      opacity: 0;
-    }
-  }
-  @keyframes cover-in {
-    from {
-      transform: translateY(100%);
-    }
-  }
-  @keyframes cover-out {
-    to {
-      transform: translateY(100%);
-    }
-  }
-  @keyframes fade-out {
-    to {
       opacity: 0;
     }
   }

@@ -1,20 +1,18 @@
 import { useState } from 'react'
-import { validateEntry, type Day, type Entry } from '../../../domain/entry'
+import { MAX_REPS, MIN_REPS, validateEntry, WEIGHT_LIMIT_KG, type Day, type Entry } from '../../../domain/entry'
 import { estimate1RM } from '../../../domain/progress'
 import { formatWeight, warningText } from '../format'
 
 type Field = 'weight' | 'reps'
 
 const WEIGHT_STEP = 2.5
-const MIN_REPS = 1
-const MAX_REPS = 12
 
 interface Draft {
   day: Day
-  // What the lifter typed. Undefined means untouched: the day's saved value, or empty on a day without one.
+  // What the user typed. Undefined means untouched: the day's saved value, or empty on a day without one.
   weight?: string
   reps?: string
-  // A field's warning shows only once the lifter has left it, or tapped Save while it's invalid.
+  // A field's warning shows only once the user has left it, or tapped Save while it's invalid.
   left: Record<Field, boolean>
 }
 
@@ -28,11 +26,12 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
   const check = validateEntry(weight, reps)
   const valid = check.weightKg !== undefined && check.reps !== undefined
 
-  // Shown in grey in an empty field, and where the steppers start without a valid typed value:
-  // the saved values when editing, else the latest entry.
-  const reference = editing ?? entries[0]
-  const weightBase = check.weightKg ?? reference?.weightKg ?? 0
-  const repsBase = check.reps ?? reference?.reps ?? 0
+  // Where the steppers start without a valid typed value: the saved values when editing, else the latest entry.
+  // Only the latest entry shows as grey placeholders, and not while editing.
+  const latest = editing ? undefined : entries[0]
+  const stepFrom = editing ?? latest
+  const weightBase = check.weightKg ?? stepFrom?.weightKg ?? 0
+  const repsBase = check.reps ?? stepFrom?.reps ?? 0
 
   const weightWarning = draft.left.weight && check.weightProblem ? warningText(check.weightProblem) : undefined
   const repsWarning = draft.left.reps && check.repsProblem ? warningText(check.repsProblem) : undefined
@@ -45,7 +44,7 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
     editing,
     weight,
     reps,
-    placeholder: reference && { weight: formatWeight(reference.weightKg), reps: String(reference.reps) },
+    placeholder: latest && { weight: formatWeight(latest.weightKg), reps: String(latest.reps) },
     // Both values, once both are valid.
     values: valid ? { weightKg: check.weightKg!, reps: check.reps! } : undefined,
     estimated1RM: valid ? estimate1RM(check.weightKg!, check.reps!) : undefined,
@@ -53,8 +52,9 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
     repsWarning,
     setWeight,
     setReps,
-    // Weight − stops before 0. Reps stay within 1–12.
+    // Weight steps stay over 0 and under the limit. Reps stay within 1–12.
     canLessWeight: weightBase - WEIGHT_STEP > 0,
+    canMoreWeight: weightBase + WEIGHT_STEP < WEIGHT_LIMIT_KG,
     canLessReps: repsBase > MIN_REPS,
     canMoreReps: repsBase < MAX_REPS,
     stepWeight: (sign: 1 | -1) => setWeight(formatWeight(weightBase + sign * WEIGHT_STEP)),

@@ -11,6 +11,11 @@ export interface Entry {
   reps: number
 }
 
+// The limits validateEntry checks. Weight must stay under WEIGHT_LIMIT_KG.
+export const WEIGHT_LIMIT_KG = 1000
+export const MIN_REPS = 1
+export const MAX_REPS = 12
+
 export type WeightProblem = 'not-a-number' | 'too-heavy' | 'too-many-decimals' | 'not-positive'
 export type RepsProblem = 'not-whole' | 'not-a-number' | 'too-many' | 'too-few'
 
@@ -26,12 +31,13 @@ export interface EntryCheck {
 // Checks weight and reps as typed. Surrounding spaces are ignored.
 export function validateEntry(weightText: string, repsText: string): EntryCheck {
   const check: EntryCheck = {}
-  const weight = weightText.trim()
+  // Comma and dot both mean the decimal separator.
+  const weight = weightText.trim().replace(',', '.')
   const reps = repsText.trim()
   if (weight !== '') {
     const problem = weightProblem(weight)
     if (problem) check.weightProblem = problem
-    else check.weightKg = Number(weight.replace(',', '.'))
+    else check.weightKg = Number(weight)
   }
   if (reps !== '') {
     const problem = repsProblem(reps)
@@ -41,13 +47,13 @@ export function validateEntry(weightText: string, repsText: string): EntryCheck 
   return check
 }
 
-// Over 0 and under 1000 kg, up to 2 decimals. Comma or dot; a trailing one ("100,") means the whole number.
+// Over 0 and under 1000 kg, up to 2 decimals. A trailing separator ("100.") means the whole number.
 // Checked in this order, so "1200.555" is too heavy.
 function weightProblem(text: string): WeightProblem | undefined {
-  const match = /^(\d*)[.,]?(\d*)$/.exec(text)
+  const match = /^(\d*)\.?(\d*)$/.exec(text)
   if (!match || !/\d/.test(text)) return 'not-a-number'
-  const kg = Number(text.replace(',', '.'))
-  if (kg >= 1000) return 'too-heavy'
+  const kg = Number(text)
+  if (kg >= WEIGHT_LIMIT_KG) return 'too-heavy'
   if (match[2].length > 2) return 'too-many-decimals'
   if (kg <= 0) return 'not-positive'
 }
@@ -57,6 +63,6 @@ function repsProblem(text: string): RepsProblem | undefined {
   if (/^\d*[.,]\d*$/.test(text) && /\d/.test(text)) return 'not-whole'
   if (!/^\d+$/.test(text)) return 'not-a-number'
   const reps = Number(text)
-  if (reps > 12) return 'too-many'
-  if (reps < 1) return 'too-few'
+  if (reps > MAX_REPS) return 'too-many'
+  if (reps < MIN_REPS) return 'too-few'
 }
