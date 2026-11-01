@@ -3,6 +3,7 @@
 ## Workflow
 
 - All changes go through a pull request; don't push directly to `main`.
+- Use `dev` for integration: feature PRs target `dev`, and release PRs target `main`.
 - Before merging, rebase the branch onto the latest `main`, then merge with a merge commit (no squash, no fast-forward). History stays linear, and each PR still shows up as one merge commit.
 
 ## Agent skills
