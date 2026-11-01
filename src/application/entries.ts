@@ -50,3 +50,8 @@ export async function saveEntry(store: LogbookStore, input: EntryInput, today: D
   await store.updateEntry(existing.id, { weightKg, reps })
   return { ...existing, weightKg, reps }
 }
+
+// Removes an entry. To move one to another day, the user deletes it and logs it again.
+export async function deleteEntry(store: LogbookStore, id: number): Promise<void> {
+  await store.deleteEntry(id)
+}

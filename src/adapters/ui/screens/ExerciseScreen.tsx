@@ -16,8 +16,8 @@ import { EntryPage } from './EntryPage'
 export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id: number; slideIn: boolean }) {
   const log = useLiveQuery(() => exerciseLog(store, id), [store, id])
   const today = localToday()
-  // The day the entry page opens on, while it's open.
-  const [entryDay, setEntryDay] = useState<Day>()
+  // How the entry page opened, while it's open: Log entry starts on today, a history row locks its day.
+  const [entryPage, setEntryPage] = useState<{ day: Day; dayLocked: boolean }>()
   // The day just saved: its row lights up briefly.
   const [flash, setFlash] = useState<Day>()
 
@@ -42,7 +42,7 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
             <ProgressChart entries={found.entries.map((item) => item.entry)} today={today} />
             {/* Always the same text, whether or not today has an entry. */}
             <button
-              onClick={() => setEntryDay(today)}
+              onClick={() => setEntryPage({ day: today, dayLocked: false })}
               className={`mx-5 mt-6 flex min-h-11 w-[calc(100%-2.5rem)] items-center justify-center gap-2 rounded-card bg-tint p-4 text-headline text-on-tint ${press}`}
             >
               <Plus size={24} strokeWidth={2.25} aria-hidden />
@@ -54,22 +54,29 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
               // One grid for every row, so the columns line up: weight, × reps, spacer, estimated 1RM, day.
               <ul className="mt-6 ml-5 grid grid-cols-[auto_auto_1fr_auto_auto] tabular-nums">
                 {found.entries.map((item) => (
-                  <HistoryRow key={item.entry.id} item={item} today={today} lit={item.entry.day === flash} />
+                  <HistoryRow
+                    key={item.entry.id}
+                    item={item}
+                    today={today}
+                    lit={item.entry.day === flash}
+                    onOpen={() => setEntryPage({ day: item.entry.day, dayLocked: true })}
+                  />
                 ))}
               </ul>
             )}
           </>
         )}
       </PushedScreen>
-      {found && entryDay && (
+      {found && entryPage && (
         <EntryPage
           store={store}
           exerciseId={found.exercise.id}
           entries={found.entries.map((item) => item.entry)}
-          startDay={entryDay}
+          startDay={entryPage.day}
+          dayLocked={entryPage.dayLocked}
           today={today}
           onClosed={(savedDay) => {
-            setEntryDay(undefined)
+            setEntryPage(undefined)
             setFlash(savedDay)
           }}
         />
@@ -78,12 +85,24 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
   )
 }
 
-function HistoryRow({ item: { entry, estimated1RM }, today, lit }: { item: LogEntry; today: Day; lit: boolean }) {
+interface HistoryRowProps {
+  item: LogEntry
+  today: Day
+  lit: boolean
+  // Tapped: opens the entry page to edit this entry.
+  onOpen: () => void
+}
+
+function HistoryRow({ item: { entry, estimated1RM }, today, lit, onOpen }: HistoryRowProps) {
   return (
     // Lit up (just saved): tint at once, then fades back once it's no longer lit.
     <li
-      className={`col-span-full grid min-h-11 grid-cols-subgrid items-baseline border-b border-separator py-3 transition-colors ease-out last:border-b-0 ${lit ? 'bg-tint/15 duration-0' : 'duration-700'}`}
+      className={`col-span-full grid grid-cols-subgrid border-b border-separator transition-colors ease-out last:border-b-0 ${lit ? 'bg-tint/15 duration-0' : 'duration-700'}`}
     >
+      <button
+        onClick={onOpen}
+        className="col-span-full grid min-h-11 grid-cols-subgrid items-baseline py-3 text-left active:opacity-70"
+      >
       <span className="text-right text-body">
         {formatWeight(entry.weightKg)}
         <Kg />
@@ -95,6 +114,7 @@ function HistoryRow({ item: { entry, estimated1RM }, today, lit }: { item: LogEn
         <Kg />
       </span>
       <span className="pr-5 pl-4 text-right text-subhead text-label-secondary">{dayLabel(entry.day, today)}</span>
+      </button>
     </li>
   )
 }

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
 import { createDexieLogbookStore } from '../adapters/dexie/dexieLogbookStore'
-import { exerciseLog, saveEntry } from './entries'
+import { deleteEntry, exerciseLog, saveEntry } from './entries'
 
 // A fresh database per test.
 const freshStore = () => createDexieLogbookStore(`test-${crypto.randomUUID()}`)
@@ -96,5 +96,49 @@ describe('saveEntry', () => {
     const log = await exerciseLog(store, squat.id)
     if (log === 'not-found') throw new Error('expected the squat log')
     expect(log.entries.map((e) => [e.entry.weightKg, e.entry.reps, e.estimated1RM])).toEqual([[140, 1, 140]])
+  })
+})
+
+describe('deleteEntry', () => {
+  it('removes the entry and leaves the others', async () => {
+    const store = freshStore()
+    const [squat, bench] = await store.listExercises()
+    const gone = await store.addEntry({ exerciseId: squat.id, day: '2026-10-30', weightKg: 100, reps: 5 })
+    const otherDay = await store.addEntry({ exerciseId: squat.id, day: '2026-10-28', weightKg: 95, reps: 5 })
+    const otherExercise = await store.addEntry({ exerciseId: bench.id, day: '2026-10-30', weightKg: 80, reps: 5 })
+
+    await deleteEntry(store, gone.id)
+
+    expect(await store.listEntries(squat.id)).toEqual([otherDay])
+    expect(await store.listEntries(bench.id)).toEqual([otherExercise])
+  })
+})
+
+describe('deleteEntry, then exerciseLog', () => {
+  it('no longer lists the deleted entry', async () => {
+    const store = freshStore()
+    const [squat] = await store.listExercises()
+    const today = '2026-11-01'
+    const kept = await saveEntry(store, { exerciseId: squat.id, day: '2026-10-28', weightKg: 95, reps: 5 }, today)
+    const gone = await saveEntry(store, { exerciseId: squat.id, day: '2026-10-30', weightKg: 140, reps: 1 }, today)
+
+    await deleteEntry(store, gone.id)
+
+    const log = await exerciseLog(store, squat.id)
+    if (log === 'not-found') throw new Error('expected the squat log')
+    expect(log.entries.map((e) => e.entry)).toEqual([kept])
+  })
+
+  it('lets the day be logged again', async () => {
+    const store = freshStore()
+    const [squat] = await store.listExercises()
+    const today = '2026-11-01'
+    const gone = await saveEntry(store, { exerciseId: squat.id, day: '2026-10-30', weightKg: 140, reps: 1 }, today)
+
+    await deleteEntry(store, gone.id)
+    const again = await saveEntry(store, { exerciseId: squat.id, day: '2026-10-30', weightKg: 100, reps: 5 }, today)
+
+    expect(again.id).not.toBe(gone.id)
+    expect(await store.listEntries(squat.id)).toEqual([again])
   })
 })

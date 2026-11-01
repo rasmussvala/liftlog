@@ -33,10 +33,10 @@ src/
 
 | Module | Exports |
 |---|---|
-| `logbookStore.ts` | `LogbookStore`: the only port. Entries: `listEntries`, `addEntry`, `updateEntry` |
+| `logbookStore.ts` | `LogbookStore`: the only port. Entries: `listEntries`, `addEntry`, `updateEntry`, `deleteEntry` |
 | `homeOverview.ts` | `homeOverview(store)`: one item per exercise with its current estimate, for Home |
 | `exercises.ts` | `listExercises`, `addExercise`, `renameExercise`, `deleteExercise` (refused if it has entries) |
-| `entries.ts` | `exerciseLog(store, id) → { exercise, entries } \| 'not-found'` (entries newest first, each with its estimated 1RM), `saveEntry(store, input, today)` (adds, or updates the day's entry), `deleteEntry` |
+| `entries.ts` | `exerciseLog(store, id) → { exercise, entries } \| 'not-found'` (entries newest first, each with its estimated 1RM), `saveEntry(store, input, today)` (adds, or updates the day's entry), `deleteEntry(store, id)` |
 | `backup.ts` | `exportBackup(store)`, `importBackup(store, json)` |
 
 Use cases are plain functions that take the store as their first argument. Anything time-dependent takes `today` as a parameter.
@@ -53,8 +53,8 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/screens/HomeScreen.tsx` | The user's exercises |
 | `ui/Kg.tsx` | The grey " kg" unit after a weight |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change, entry warnings; `localToday()` |
-| `ui/screens/ExerciseScreen.tsx` | Progress chart, then the Log entry button, then history, newest first |
-| `ui/screens/EntryPage.tsx` | Log or edit an entry for any day, on a `CoverPage` |
+| `ui/screens/ExerciseScreen.tsx` | Progress chart, then the Log entry button, then history, newest first. A history row opens its entry to edit or delete |
+| `ui/screens/EntryPage.tsx` | Log, edit or delete an entry, on a `CoverPage`. Opened from a history row, the day is locked |
 | `ui/screens/useEntryDraft.ts` | The entry page's form state: typed text, placeholders, steppers, warnings |
 | `ui/screens/SettingsScreen.tsx` | WIP. Later: manage exercises, export/import |
 | `ui/ProgressChart.tsx` | The progress chart, hand-drawn SVG with no chart library: tap or slide to read an entry |
