@@ -101,19 +101,19 @@ function HistoryRow({ item: { entry, estimated1RM }, today, lit, onOpen }: Histo
     >
       <button
         onClick={onOpen}
-        className="col-span-full grid min-h-11 grid-cols-subgrid items-baseline py-3 text-left active:opacity-70"
+        className="col-span-full grid min-h-11 grid-cols-subgrid items-baseline py-3 text-left transition-opacity duration-150 ease-out active:opacity-70 active:duration-0"
       >
-      <span className="text-right text-body">
-        {formatWeight(entry.weightKg)}
-        <Kg />
-      </span>
-      <span className="pl-2 text-body text-label-secondary">× {entry.reps}</span>
-      <span aria-hidden />
-      <span className="pl-4 text-right text-headline">
-        {formatEstimate(estimated1RM)}
-        <Kg />
-      </span>
-      <span className="pr-5 pl-4 text-right text-subhead text-label-secondary">{dayLabel(entry.day, today)}</span>
+        <span className="text-right text-body">
+          {formatWeight(entry.weightKg)}
+          <Kg />
+        </span>
+        <span className="pl-2 text-body text-label-secondary">× {entry.reps}</span>
+        <span aria-hidden />
+        <span className="pl-4 text-right text-headline">
+          {formatEstimate(estimated1RM)}
+          <Kg />
+        </span>
+        <span className="pr-5 pl-4 text-right text-subhead text-label-secondary">{dayLabel(entry.day, today)}</span>
       </button>
     </li>
   )

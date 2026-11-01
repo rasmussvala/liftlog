@@ -25,24 +25,24 @@ interface EntryPageProps {
 
 // Log an entry for any past day, edit the one a picked day already has, or delete it.
 export function EntryPage({ store, exerciseId, entries, startDay, dayLocked, today, onClosed }: EntryPageProps) {
-  // Set once Save, Delete or Cancel starts the exit. Undefined while the page is open. Holds the entries
-  // as they were, so the page doesn't change (title, values, Delete) as the store updates while it slides away.
+  // The entries as they were when a save or delete started: set while it runs, then kept by the exit.
+  // So the page doesn't change (title, values, Delete) as the store updates under it.
+  const [frozen, setFrozen] = useState<readonly Entry[]>()
+  // Set once Save, Delete or Cancel starts the exit. Undefined while the page is open.
   const [exit, setExit] = useState<{ savedDay?: Day; entries: readonly Entry[] }>()
-  const form = useEntryDraft(exit?.entries ?? entries, startDay)
+  const form = useEntryDraft(exit?.entries ?? frozen ?? entries, startDay)
   const title = form.editing ? `Edit ${dayLabel(form.day, today)}` : 'New entry'
-  // A save or delete is running.
-  const [busy, setBusy] = useState(false)
+  const busy = frozen !== undefined && !exit
 
-  // Runs a store change, then closes the page. On failure the page stays open, so nothing typed is lost.
-  const change = async (what: string, run: () => Promise<unknown>, savedDay?: Day) => {
-    setBusy(true)
+  // Runs a save or delete, then closes the page. On failure the page stays open, so nothing typed is lost.
+  const storeAndClose = async (action: 'Saving' | 'Deleting', run: () => Promise<unknown>, savedDay?: Day) => {
+    setFrozen(entries)
     try {
       await run()
     } catch (error) {
-      console.error(`${what} the entry failed`, error)
+      console.error(`${action} the entry failed`, error)
+      setFrozen(undefined)
       return false
-    } finally {
-      setBusy(false)
     }
     setExit({ savedDay, entries })
     return true
@@ -53,7 +53,7 @@ export function EntryPage({ store, exerciseId, entries, startDay, dayLocked, tod
     // Tapping a dimmed Save shows what's wrong.
     if (!form.values) return form.leaveBoth()
     const values = form.values
-    if (await change('Saving', () => saveEntry(store, { exerciseId, day: form.day, ...values }, today), form.day)) {
+    if (await storeAndClose('Saving', () => saveEntry(store, { exerciseId, day: form.day, ...values }, today), form.day)) {
       navigator.vibrate?.(10)
     }
   }
@@ -62,7 +62,7 @@ export function EntryPage({ store, exerciseId, entries, startDay, dayLocked, tod
     const entry = form.editing
     if (busy || exit || !entry) return
     if (!window.confirm(`Delete the entry for ${dayLabel(entry.day, today)}?`)) return
-    void change('Deleting', () => deleteEntry(store, entry.id))
+    void storeAndClose('Deleting', () => deleteEntry(store, entry.id))
   }
   // While a save or delete runs, Cancel waits: the change is happening either way.
   const cancel = () => !busy && setExit((e) => e ?? { entries })

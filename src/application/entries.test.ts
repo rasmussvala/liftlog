@@ -114,6 +114,18 @@ describe('deleteEntry', () => {
   })
 })
 
+describe('deleteEntry, unknown id', () => {
+  it('changes nothing', async () => {
+    const store = freshStore()
+    const [squat] = await store.listExercises()
+    const kept = await store.addEntry({ exerciseId: squat.id, day: '2026-10-30', weightKg: 100, reps: 5 })
+
+    await deleteEntry(store, kept.id + 1)
+
+    expect(await store.listEntries(squat.id)).toEqual([kept])
+  })
+})
+
 describe('deleteEntry, then exerciseLog', () => {
   it('no longer lists the deleted entry', async () => {
     const store = freshStore()
