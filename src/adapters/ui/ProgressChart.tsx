@@ -1,7 +1,7 @@
 // The exercise screen's progress chart: every entry's estimated 1RM over real time, drawn as plain SVG.
 // Tap a point, or press and slide along the chart, to read one entry in a callout above it.
 // Vertical swipes still scroll the page (touch-pan-y). Tapping anywhere outside the chart hides the callout.
-import { useEffect, useId, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
 import type { Day, Entry } from '../../domain/entry'
 import { progress } from '../../domain/progress'
 import { dayLabel, formatEstimate, formatWeight } from './format'
@@ -12,7 +12,9 @@ const W = 350
 const H = 170
 const PAD = { top: 20, right: 16, bottom: 26, left: 16 }
 // Share of the data's range added above and below, so points don't touch the edges.
-const Y_PADDING = 0.15
+const Y_MARGIN = 0.15
+// The middle date label is left out when it's closer than this to either end, so labels never overlap.
+const MIN_LABEL_GAP = W / 4
 
 const time = (day: Day) => new Date(`${day}T12:00:00`).getTime()
 
@@ -20,6 +22,7 @@ const time = (day: Day) => new Date(`${day}T12:00:00`).getTime()
 export function ProgressChart({ entries, today }: { entries: readonly Entry[]; today: Day }) {
   const [selected, setSelected] = useState<number>()
   const svg = useRef<SVGSVGElement>(null)
+  const callout = useRef<HTMLDivElement>(null)
   const scrubbing = useRef(false)
   const fillId = useId()
 
@@ -33,53 +36,72 @@ export function ProgressChart({ entries, today }: { entries: readonly Entry[]; t
     return () => document.removeEventListener('pointerdown', hide)
   }, [selected])
 
+  // Centre the callout over its point, but keep it inside the chart's width so it stays on screen.
+  // Measured before paint, because the callout's width depends on its text.
+  useLayoutEffect(() => {
+    const box = callout.current
+    if (!box || selected === undefined || !svg.current) return
+    const chartWidth = svg.current.getBoundingClientRect().width
+    const pointX = (Number(box.dataset.x) / W) * chartWidth
+    const left = Math.min(Math.max(pointX - box.offsetWidth / 2, 0), chartWidth - box.offsetWidth)
+    box.style.left = `${left}px`
+  }, [selected])
+
   if (entries.length < 2) return null
 
   const byDay = new Map(entries.map((entry) => [entry.day, entry]))
   const points = progress(entries).map((p) => ({ ...p, entry: byDay.get(p.day)! }))
-  const first = points[0]
-  const last = points.at(-1)!
 
-  const t0 = time(first.day)
-  const span = time(last.day) - t0 || 1
+  const t0 = time(points[0].day)
+  const span = time(points.at(-1)!.day) - t0 || 1
   const estimates = points.map((p) => p.estimated1RM)
-  const lo = Math.min(...estimates)
-  const hi = Math.max(...estimates)
-  const pad = Math.max((hi - lo) * Y_PADDING, 1)
+  const lowest = Math.min(...estimates)
+  const highest = Math.max(...estimates)
+  const yMargin = Math.max((highest - lowest) * Y_MARGIN, 1)
   const x = (day: Day) => PAD.left + ((time(day) - t0) / span) * (W - PAD.left - PAD.right)
-  const y = (est: number) => PAD.top + (1 - (est - (lo - pad)) / (hi - lo + 2 * pad)) * (H - PAD.top - PAD.bottom)
-  const xs = points.map((p) => x(p.day))
+  const y = (est: number) =>
+    PAD.top + (1 - (est - (lowest - yMargin)) / (highest - lowest + 2 * yMargin)) * (H - PAD.top - PAD.bottom)
+  const plotted = points.map((p) => ({ ...p, x: x(p.day), y: y(p.estimated1RM) }))
+  const first = plotted[0]
+  const last = plotted.at(-1)!
 
   const baseline = H - PAD.bottom
-  const line = points.map((p, i) => `${xs[i]},${y(p.estimated1RM)}`).join(' ')
-  const area = `M${xs[0]},${baseline} L${line.replaceAll(' ', ' L')} L${xs.at(-1)},${baseline} Z`
-  const labels = [first, points[Math.floor(points.length / 2)], last]
-  const hit = selected === undefined ? undefined : points[selected]
+  const line = plotted.map((p) => `${p.x},${p.y}`).join(' ')
+  const area = `M${first.x},${baseline} ${plotted.map((p) => `L${p.x},${p.y}`).join(' ')} L${last.x},${baseline} Z`
+
+  // First, middle (the point nearest the middle in time) and last, each anchored so it stays inside the chart.
+  const midX = (first.x + last.x) / 2
+  const middle = plotted.reduce((a, b) => (Math.abs(b.x - midX) < Math.abs(a.x - midX) ? b : a))
+  const middleFits = middle.x - first.x >= MIN_LABEL_GAP && last.x - middle.x >= MIN_LABEL_GAP
+  const labels = [
+    { point: first, anchor: 'start' as const },
+    ...(middleFits ? [{ point: middle, anchor: 'middle' as const }] : []),
+    { point: last, anchor: 'end' as const },
+  ]
+
+  const selectedPoint = selected === undefined ? undefined : plotted[selected]
 
   // The point nearest the finger, by x only.
   const pick = (clientX: number) => {
     const rect = svg.current!.getBoundingClientRect()
     const fingerX = ((clientX - rect.left) / rect.width) * W
     let nearest = 0
-    xs.forEach((px, i) => {
-      if (Math.abs(px - fingerX) < Math.abs(xs[nearest] - fingerX)) nearest = i
+    plotted.forEach((p, i) => {
+      if (Math.abs(p.x - fingerX) < Math.abs(plotted[nearest].x - fingerX)) nearest = i
     })
     setSelected(nearest)
   }
-  const down = (e: PointerEvent<SVGSVGElement>) => {
+  const startScrub = (e: PointerEvent<SVGSVGElement>) => {
     scrubbing.current = true
     e.currentTarget.setPointerCapture(e.pointerId)
     pick(e.clientX)
   }
-  const move = (e: PointerEvent<SVGSVGElement>) => {
+  const scrub = (e: PointerEvent<SVGSVGElement>) => {
     if (scrubbing.current) pick(e.clientX)
   }
-  const up = () => {
+  const endScrub = () => {
     scrubbing.current = false
   }
-
-  // Where the selected point sits across the chart, 0–100%.
-  const across = hit ? (xs[selected!] / W) * 100 : 0
 
   return (
     <div className="relative mt-4 px-5 pt-12">
@@ -89,10 +111,10 @@ export function ProgressChart({ entries, today }: { entries: readonly Entry[]; t
         role="img"
         aria-label="Estimated 1RM over time"
         className="w-full touch-pan-y text-tint select-none"
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
+        onPointerDown={startScrub}
+        onPointerMove={scrub}
+        onPointerUp={endScrub}
+        onPointerCancel={endScrub}
       >
         <defs>
           <linearGradient id={fillId} x1="0" x2="0" y1="0" y2="1">
@@ -102,45 +124,47 @@ export function ProgressChart({ entries, today }: { entries: readonly Entry[]; t
         </defs>
         <path d={area} fill={`url(#${fillId})`} />
         <polyline points={line} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-        {hit && (
-          <line x1={xs[selected!]} x2={xs[selected!]} y1={PAD.top - 8} y2={baseline} className="stroke-label-secondary/50" strokeWidth={1} />
+        {selectedPoint && (
+          <line
+            x1={selectedPoint.x}
+            x2={selectedPoint.x}
+            y1={PAD.top - 8}
+            y2={baseline}
+            className="stroke-label-secondary/50"
+            strokeWidth={1}
+          />
         )}
-        {points.map((p, i) => (
+        {plotted.map((p, i) => (
           <circle
             key={p.day}
-            cx={xs[i]}
-            cy={y(p.estimated1RM)}
+            cx={p.x}
+            cy={p.y}
             r={i === selected ? 6 : 3}
             fill="currentColor"
             className={i === selected ? 'stroke-bg' : ''}
             strokeWidth={2}
           />
         ))}
-        {labels.map((p, i) => (
-          <text
-            key={i}
-            x={x(p.day)}
-            y={H - 6}
-            textAnchor={i === 0 ? 'start' : i === 2 ? 'end' : 'middle'}
-            className="fill-label-secondary text-footnote"
-          >
-            {dayLabel(p.day, today)}
+        {labels.map(({ point, anchor }) => (
+          <text key={anchor} x={point.x} y={H - 6} textAnchor={anchor} className="fill-label-secondary text-footnote">
+            {dayLabel(point.day, today)}
           </text>
         ))}
       </svg>
-      {hit && (
-        // Sits over its point, shifted by the same share of its own width so it never leaves the screen.
+      {selectedPoint && (
+        // Placed by the layout effect above. Scales in from its bottom edge, the side that points at the dot.
         <div className="pointer-events-none absolute inset-x-5 top-0">
           <div
-            className="absolute top-0 flex origin-bottom items-baseline gap-2 rounded-control bg-surface-raised px-3 py-1.5 whitespace-nowrap tabular-nums shadow-md transition-[opacity,scale] duration-150 ease-out starting:scale-95 starting:opacity-0"
-            style={{ left: `${across}%`, translate: `-${across}% 0` }}
+            ref={callout}
+            data-x={selectedPoint.x}
+            className="absolute top-0 flex origin-bottom items-baseline gap-2 rounded-control bg-surface-raised px-3 py-1.5 whitespace-nowrap tabular-nums shadow-md transition-[opacity,scale] duration-150 ease-out starting:opacity-0 motion-safe:starting:scale-95"
           >
             <span className="text-headline">
-              {formatEstimate(hit.estimated1RM)}
+              {formatEstimate(selectedPoint.estimated1RM)}
               <Kg />
             </span>
             <span className="text-footnote text-label-secondary">
-              {formatWeight(hit.entry.weightKg)} × {hit.entry.reps} · {dayLabel(hit.day, today)}
+              {formatWeight(selectedPoint.entry.weightKg)} × {selectedPoint.entry.reps} · {dayLabel(selectedPoint.day, today)}
             </span>
           </div>
         </div>
