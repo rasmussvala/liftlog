@@ -15,8 +15,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
-        name: 'liftlog',
-        short_name: 'liftlog',
+        name: 'LiftLog',
+        short_name: 'LiftLog',
         description: 'Personal 1RM tracker',
         theme_color: '#15161c',
         background_color: '#15161c',

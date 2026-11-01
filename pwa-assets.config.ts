@@ -6,7 +6,7 @@ import {
 // Regenerate icons with: npm run generate-pwa-assets
 // Pad maskable and Apple icons with the logo's background color
 // instead of white.
-const background = '#18181b'
+const background = '#15161c'
 
 export default defineConfig({
   headLinkOptions: {
