@@ -5,10 +5,11 @@ import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day } from '../../../domain/entry'
 import { dayLabel, formatEstimate, formatWeight, localToday } from '../format'
 import { Kg } from '../Kg'
+import { ProgressChart } from '../ProgressChart'
 import { PushedScreen } from '../PushedScreen'
 import { goHome } from '../router'
 
-// One exercise's history, newest first. The chart and today's entry form come in later tickets.
+// One exercise's progress chart, then its history, newest first. The entry form comes in a later ticket.
 export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id: number; slideIn: boolean }) {
   const log = useLiveQuery(() => exerciseLog(store, id), [store, id])
   const today = localToday()
@@ -22,6 +23,7 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
 
   return (
     <PushedScreen title={found?.exercise.name ?? ''} slideIn={slideIn}>
+      {found && <ProgressChart entries={found.entries.map((item) => item.entry)} today={today} />}
       {found &&
         (found.entries.length === 0 ? (
           <p className="mt-4 px-5 text-body text-label-secondary">No entries</p>

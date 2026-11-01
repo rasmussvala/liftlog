@@ -44,7 +44,7 @@
                 "message": "domain/ must not import outer layers."
               },
               {
-                "group": ["dexie", "dexie-*", "react", "react-*", "recharts"],
+                "group": ["dexie", "dexie-*", "react", "react-*"],
                 "message": "domain/ must not depend on frameworks."
               }
             ]
@@ -64,7 +64,7 @@
                 "message": "application/ must not import adapters. Depend on a port instead."
               },
               {
-                "group": ["dexie", "dexie-*", "react", "react-*", "recharts"],
+                "group": ["dexie", "dexie-*", "react", "react-*"],
                 "message": "application/ must not depend on frameworks."
               }
             ]
@@ -85,7 +85,7 @@
                 "message": "Use-case tests may import only the Dexie adapter."
               },
               {
-                "group": ["dexie", "dexie-*", "react", "react-*", "recharts"],
+                "group": ["dexie", "dexie-*", "react", "react-*"],
                 "message": "Reach storage through the Dexie adapter, not Dexie itself."
               }
             ]

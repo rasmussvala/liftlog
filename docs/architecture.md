@@ -16,7 +16,7 @@ src/
 |---|---|
 | A rule about exercises or entries, a calculation, the backup file format | `domain/` |
 | Something the user can do (log an entry, import a backup) | `application/` |
-| Anything that imports Dexie, React, Recharts or a browser API | `adapters/` |
+| Anything that imports Dexie, React or a browser API | `adapters/` |
 
 ## Modules
 
@@ -26,7 +26,7 @@ src/
 |---|---|
 | `exercise.ts` | `Exercise`, `STARTER_EXERCISES`, `validateExerciseName(name)` |
 | `entry.ts` | `Entry`, `Day` (`"2026-10-31"`, the user's local date), `validateEntry({ weightKg, reps })` |
-| `progress.ts` | `estimate1RM(weightKg, reps)`, `currentEstimate(entries) → { latest, estimated1RM, change }`, `progress(entries) → { points, best }` |
+| `progress.ts` | `estimate1RM(weightKg, reps)`, `currentEstimate(entries) → { latest, estimated1RM, change }`, `progress(entries) → { day, estimated1RM }[]` (oldest first, for the chart) |
 | `backup.ts` | `BackupData`, `serializeBackup(data)`, `parseBackup(json)`: checks the file and upgrades old versions |
 
 ### application/
@@ -51,9 +51,9 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/screens/HomeScreen.tsx` | The user's exercises |
 | `ui/Kg.tsx` | The grey " kg" unit after a weight |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change; `localToday()` |
-| `ui/screens/ExerciseScreen.tsx` | History, newest first. Later: chart and today's entry form |
+| `ui/screens/ExerciseScreen.tsx` | Progress chart, then history, newest first. Later: the entry form |
 | `ui/screens/SettingsScreen.tsx` | WIP. Later: manage exercises, export/import |
-| `ui/ProgressChart.tsx` | The only file that imports Recharts |
+| `ui/ProgressChart.tsx` | The progress chart, hand-drawn SVG with no chart library: tap or slide to read an entry |
 | `ui/backupFile.ts` | Download a backup, read a picked file |
 
 ## Testing

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { currentEstimate, estimate1RM } from './progress'
+import { currentEstimate, estimate1RM, progress } from './progress'
 
 describe('estimate1RM', () => {
   it('applies the Epley formula', () => {
@@ -37,5 +37,17 @@ describe('currentEstimate', () => {
   it('reports a rise as a positive change', () => {
     const result = currentEstimate([entry('2026-10-01', 60, 10), entry('2026-10-08', 100, 5)])
     expect(result?.change).toBeCloseTo(36.67, 2)
+  })
+})
+
+describe('progress', () => {
+  const entry = (day: string, weightKg: number, reps: number) => ({ id: 0, exerciseId: 1, day, weightKg, reps })
+
+  it('gives one point per entry, oldest day first, from entries in any order', () => {
+    const points = progress([entry('2026-10-10', 60, 10), entry('2026-09-01', 140, 1), entry('2026-10-05', 100, 5)])
+    expect(points.map((p) => p.day)).toEqual(['2026-09-01', '2026-10-05', '2026-10-10'])
+    expect(points[0].estimated1RM).toBe(140)
+    expect(points[1].estimated1RM).toBeCloseTo(116.67, 2)
+    expect(points[2].estimated1RM).toBeCloseTo(80, 5)
   })
 })

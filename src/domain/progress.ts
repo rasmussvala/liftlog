@@ -1,4 +1,4 @@
-import type { Entry } from './entry'
+import type { Day, Entry } from './entry'
 
 // Estimated one-rep max (kg) with the Epley formula: w × (1 + reps / 30).
 // A single rep is already a 1RM, so it is returned as is.
@@ -22,4 +22,17 @@ export function currentEstimate(entries: readonly Entry[]): CurrentEstimate | un
   const estimated1RM = estimate1RM(latest.weightKg, latest.reps)
   const change = previous ? estimated1RM - estimate1RM(previous.weightKg, previous.reps) : undefined
   return { latest, estimated1RM, change }
+}
+
+// One point on the progress chart.
+export interface ProgressPoint {
+  day: Day
+  estimated1RM: number
+}
+
+// The chart's points: one per entry, oldest day first. Entries may come in any order.
+export function progress(entries: readonly Entry[]): ProgressPoint[] {
+  return entries
+    .toSorted((a, b) => a.day.localeCompare(b.day))
+    .map((entry) => ({ day: entry.day, estimated1RM: estimate1RM(entry.weightKg, entry.reps) }))
 }
