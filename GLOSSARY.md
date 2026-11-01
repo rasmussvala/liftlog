@@ -5,7 +5,7 @@ A personal tracker for one lifter's estimated one-rep max on a handful of main l
 ## Language
 
 **Exercise**:
-A lift the user tracks, such as squat or bench press, identified by a name they choose.
+A lift the user tracks, such as squat or bench press, identified by a name they choose. Names are unique, ignoring case. The user sets the order exercises appear in. Deleting an exercise deletes its entries too.
 _Avoid_: Lift, movement
 
 **Entry**:
