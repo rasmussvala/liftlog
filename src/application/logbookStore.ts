@@ -13,6 +13,8 @@ export interface LogbookStore {
   renameExercise(id: number, name: string): Promise<void>
   // Removes an exercise and its entries atomically. An unknown id does nothing.
   deleteExercise(id: number): Promise<void>
+  // Writes every exercise position in the given order atomically.
+  reorderExercises(ids: number[]): Promise<void>
   // One exercise's entries, oldest day first.
   listEntries(exerciseId: number): Promise<Entry[]>
   // Rejects a second entry for the same exercise and day (ADR 0001).

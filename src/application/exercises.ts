@@ -31,3 +31,18 @@ export async function renameExercise(store: LogbookStore, id: number, name: stri
 export function deleteExercise(store: LogbookStore, id: number): Promise<void> {
   return store.deleteExercise(id)
 }
+
+// Moves one exercise to an index in the current order and stores the complete new order.
+export async function moveExercise(store: LogbookStore, id: number, toIndex: number): Promise<void> {
+  const exercises = await store.listExercises()
+  const fromIndex = exercises.findIndex((exercise) => exercise.id === id)
+  if (fromIndex < 0) return
+
+  const targetIndex = Math.max(0, Math.min(Math.trunc(toIndex), exercises.length - 1))
+  if (fromIndex === targetIndex) return
+
+  const [exercise] = exercises.splice(fromIndex, 1)
+  exercises.splice(targetIndex, 0, exercise)
+  await store.reorderExercises(exercises.map((item) => item.id))
+}
+
