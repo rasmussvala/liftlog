@@ -51,5 +51,8 @@ export function createDexieLogbookStore(name = 'liftlog'): LogbookStore {
       const id = await db.entries.add(entry as Entry)
       return { ...entry, id }
     },
+    updateEntry: async (id, { weightKg, reps }) => {
+      await db.entries.update(id, { weightKg, reps })
+    },
   }
 }

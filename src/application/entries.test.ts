@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
 import { createDexieLogbookStore } from '../adapters/dexie/dexieLogbookStore'
-import { exerciseLog } from './entries'
+import { exerciseLog, saveEntry } from './entries'
 
 // A fresh database per test.
 const freshStore = () => createDexieLogbookStore(`test-${crypto.randomUUID()}`)
@@ -32,5 +32,69 @@ describe('exerciseLog', () => {
 
   it('is not-found for an unknown id', async () => {
     expect(await exerciseLog(freshStore(), 999)).toBe('not-found')
+  })
+})
+
+describe('saveEntry', () => {
+  const today = '2026-11-01'
+
+  it('adds an entry for a day that has none, and returns it', async () => {
+    const store = freshStore()
+    const [squat] = await store.listExercises()
+
+    const saved = await saveEntry(store, { exerciseId: squat.id, day: '2026-10-30', weightKg: 117.5, reps: 5 }, today)
+
+    expect(saved).toEqual({ id: expect.any(Number), exerciseId: squat.id, day: '2026-10-30', weightKg: 117.5, reps: 5 })
+    expect(await store.listEntries(squat.id)).toEqual([saved])
+  })
+
+  it("updates the day's entry when it has one, leaving one entry for that day", async () => {
+    const store = freshStore()
+    const [squat, bench] = await store.listExercises()
+    const first = await store.addEntry({ exerciseId: squat.id, day: '2026-10-30', weightKg: 100, reps: 5 })
+    const otherDay = await store.addEntry({ exerciseId: squat.id, day: '2026-10-28', weightKg: 95, reps: 5 })
+    const otherExercise = await store.addEntry({ exerciseId: bench.id, day: '2026-10-30', weightKg: 80, reps: 5 })
+
+    const saved = await saveEntry(store, { exerciseId: squat.id, day: '2026-10-30', weightKg: 102.5, reps: 3 }, today)
+
+    expect(saved).toEqual({ ...first, weightKg: 102.5, reps: 3 })
+    expect(await store.listEntries(squat.id)).toEqual([otherDay, saved])
+    expect(await store.listEntries(bench.id)).toEqual([otherExercise])
+  })
+
+  it('refuses a day after today, and stores nothing', async () => {
+    const store = freshStore()
+    const [squat] = await store.listExercises()
+
+    await expect(saveEntry(store, { exerciseId: squat.id, day: '2026-11-02', weightKg: 100, reps: 5 }, today)).rejects.toThrow()
+    await expect(saveEntry(store, { exerciseId: squat.id, day: today, weightKg: 100, reps: 5 }, today)).resolves.toBeDefined()
+    expect((await store.listEntries(squat.id)).map((e) => e.day)).toEqual([today])
+  })
+
+  it.each([
+    { weightKg: 0, reps: 5 },
+    { weightKg: 1000, reps: 5 },
+    { weightKg: 100.255, reps: 5 },
+    { weightKg: Number.NaN, reps: 5 },
+    { weightKg: 100, reps: 0 },
+    { weightKg: 100, reps: 13 },
+    { weightKg: 100, reps: 5.5 },
+  ])('refuses invalid values ($weightKg kg × $reps), and stores nothing', async (values) => {
+    const store = freshStore()
+    const [squat] = await store.listExercises()
+
+    await expect(saveEntry(store, { exerciseId: squat.id, day: today, ...values }, today)).rejects.toThrow()
+    expect(await store.listEntries(squat.id)).toEqual([])
+  })
+
+  it('shows in the exercise log afterwards', async () => {
+    const store = freshStore()
+    const [squat] = await store.listExercises()
+    await saveEntry(store, { exerciseId: squat.id, day: '2026-10-30', weightKg: 100, reps: 5 }, today)
+    await saveEntry(store, { exerciseId: squat.id, day: '2026-10-30', weightKg: 140, reps: 1 }, today)
+
+    const log = await exerciseLog(store, squat.id)
+    if (log === 'not-found') throw new Error('expected the squat log')
+    expect(log.entries.map((e) => [e.entry.weightKg, e.entry.reps, e.estimated1RM])).toEqual([[140, 1, 140]])
   })
 })

@@ -58,6 +58,10 @@ Spacing uses Tailwind's default 4px scale (`p-5` = 20px). Pages use `px-5` and c
 
 Pair them: `motion-safe:animate-screen-in motion-reduce:animate-fade-in`.
 
+A full-screen page over a screen (`CoverPage`, such as the entry page) slides up from the bottom in 400ms and back down in 260ms, on `ease-drawer`, and fades (200ms) under reduced motion. It uses transitions rather than keyframes, so closing it mid-slide reverses from where it is.
+
+Pressables scale to 0.97 the moment a finger touches down and ease back over 150ms: use `press` from `src/adapters/ui/press.ts`.
+
 ## Icons
 
 Icons come only from [Lucide](https://lucide.dev) (`lucide-react`). SF Symbols aren't allowed: Apple's licence limits them to Apple platforms' native apps, not the web.
@@ -73,7 +77,7 @@ Icons come only from [Lucide](https://lucide.dev) (`lucide-react`). SF Symbols a
 - **Tap targets are at least 44×44px.** Use `min-h-11` on anything tappable.
 - **Respect the notch and home bar.** `body` already pads by the safe-area insets. Anything fixed to the top or bottom of the screen must add `env(safe-area-inset-*)` itself.
 - **Use the number keyboard for numbers:** `inputMode="decimal"` for weight and `inputMode="numeric"` for reps.
-- **Give feedback when a finger touches down, not on release.** Use the `active:` state (`active:opacity-70` or `active:scale-[0.98]`).
+- **Give feedback when a finger touches down, not on release.** Use the `active:` state (`active:opacity-70`, or `press` for a scale).
 - **Respect reduced motion.** Wrap motion in `motion-safe:` so it drops out for people who turn it off.
 
 ## Adding a token
