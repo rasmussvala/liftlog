@@ -5,6 +5,7 @@ import { rubberband, spring, VelocityTracker } from './physics'
 const HOLD_MS = 400
 const SLOP = 10
 const EDGE_SIZE = 90
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 interface Position {
   top: number
@@ -48,7 +49,7 @@ function paintDisplacement(rows: Map<number, HTMLLIElement>, current: PendingDra
       current.offset = delta
       row.style.transition = 'none'
       row.style.zIndex = '2'
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const reduce = prefersReducedMotion()
       row.style.transform = `translateY(${delta}px)${reduce ? '' : ` scale(${current.scale})`}`
       continue
     }
@@ -61,7 +62,7 @@ function paintDisplacement(rows: Map<number, HTMLLIElement>, current: PendingDra
     const neighbor = initialOrder[index + (shiftsUp ? -1 : 1)]
     const neighborTop = positions.get(neighbor)?.top
     const offset = neighborTop === undefined ? 0 : neighborTop - position.top
-    row.style.transition = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    row.style.transition = prefersReducedMotion()
       ? 'none'
       : 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)'
     row.style.transform = `translateY(${offset}px)`
@@ -129,7 +130,7 @@ export function useReorder(ids: number[], onMove: (id: number, toIndex: number) 
     const to = current.targetIndex
     const slotTop = (index: number) => current.positions?.get(current.initialOrder?.[index] ?? -1)?.top ?? 0
     const destination = slotTop(to) - slotTop(from)
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reducedMotion = prefersReducedMotion()
     current.stopSpring?.()
     if (!commit) {
       clearOffsets()
@@ -207,7 +208,7 @@ export function useReorder(ids: number[], onMove: (id: number, toIndex: number) 
     flushSync(() => setDraggingId(current.id))
     if ('vibrate' in navigator) navigator.vibrate(10)
     paintDisplacement(rows.current, current, 0)
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (!prefersReducedMotion()) {
       const picked = rows.current.get(current.id)
       current.stopSpring = spring({
         from: 1,
@@ -218,7 +219,7 @@ export function useReorder(ids: number[], onMove: (id: number, toIndex: number) 
           current.scale = value
           if (picked) {
             picked.style.transform = `translateY(${current.offset}px) scale(${value})`
-            picked.style.boxShadow = `0 12px 24px rgb(0 0 0 / ${Math.round((value - 1) * 600)}%)`
+            picked.style.boxShadow = `0 12px 24px color-mix(in srgb, var(--color-label) ${Math.round((value - 1) * 600)}%, transparent)`
           }
         },
       })

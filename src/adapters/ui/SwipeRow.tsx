@@ -120,6 +120,10 @@ export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed
     callbacks.current = { onTap, onEdit, onDelete, onCollapsed }
   })
 
+  useLayoutEffect(() => {
+    if (isReordering) state.current.gesture = 'reorder'
+  }, [isReordering])
+
   useEffect(() => {
     if (!flash) return
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
