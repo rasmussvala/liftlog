@@ -33,9 +33,9 @@ src/
 
 | Module | Exports |
 |---|---|
-| `logbookStore.ts` | `LogbookStore`: the only port. Exercises: `listExercises` (by position), `getExercise`, `addExercise`. Entries: `listEntries`, `addEntry`, `updateEntry`, `deleteEntry` |
+| `logbookStore.ts` | `LogbookStore`: the only port. Exercises: `listExercises` (by position), `getExercise`, `addExercise`, `renameExercise`, `deleteExercise` (with entries, atomically). Entries: `listEntries`, `addEntry`, `updateEntry`, `deleteEntry` |
 | `homeOverview.ts` | `homeOverview(store)`: one item per exercise, in the user's order, with its current estimate and `entryCount`, for Home |
-| `exercises.ts` | `listExercises`, `addExercise`, `renameExercise`, `deleteExercise` (refused if it has entries) |
+| `exercises.ts` | `listExercises`, `addExercise`, `renameExercise`, `deleteExercise` (removes the exercise and its entries) |
 | `entries.ts` | `exerciseLog(store, id) → { exercise, entries } \| 'not-found'` (entries newest first, each with its estimated 1RM), `saveEntry(store, input, today)` (adds, or updates the day's entry), `deleteEntry(store, id)` |
 | `backup.ts` | `exportBackup(store)`, `importBackup(store, json)` |
 

@@ -67,6 +67,19 @@ export function createDexieLogbookStore(name = 'liftlog'): LogbookStore {
         const id = await db.exercises.add(exercise as Exercise)
         return { ...exercise, id }
       }),
+    renameExercise: async (id, name) => {
+      await db.exercises.update(id, { name })
+    },
+    deleteExercise: async (id) => {
+      await db.transaction('rw', db.exercises, db.entries, async () => {
+        if (!(await db.exercises.get(id))) return
+        await db.entries
+          .where('[exerciseId+day]')
+          .between([id, Dexie.minKey], [id, Dexie.maxKey])
+          .delete()
+        await db.exercises.delete(id)
+      })
+    },
     listEntries: (exerciseId) =>
       db.entries.where('[exerciseId+day]').between([exerciseId, Dexie.minKey], [exerciseId, Dexie.maxKey]).toArray(),
     addEntry: async (entry) => {
