@@ -219,7 +219,7 @@ export function useReorder(ids: number[], onMove: (id: number, toIndex: number) 
           current.scale = value
           if (picked) {
             picked.style.transform = `translateY(${current.offset}px) scale(${value})`
-            picked.style.boxShadow = `0 12px 24px color-mix(in srgb, var(--color-label) ${Math.round((value - 1) * 600)}%, transparent)`
+            picked.style.boxShadow = `0 12px 24px color-mix(in srgb, var(--color-shadow) ${Math.round((value - 1) * 600)}%, transparent)`
           }
         },
       })

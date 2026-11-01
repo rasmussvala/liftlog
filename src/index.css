@@ -13,6 +13,7 @@
   --color-surface-raised: light-dark(#eef0f6, #232832);
   --color-label: light-dark(#15161c, #f5f6f8);
   --color-label-secondary: light-dark(#5f6573, #9aa0ad);
+  --color-shadow: light-dark(#15161c, #000000);
   --color-separator: light-dark(#e2e5ef, #2d3240);
   --color-tint: light-dark(#4f5fd6, #91a4ff);
   --color-on-tint: light-dark(#ffffff, #15161c);
