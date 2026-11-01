@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { project, rubberband, spring, VelocityTracker } from './physics'
+import { useCollapseRow, usePreventSwipeScroll, type SwipeGesture } from './useSwipeRowEffects'
 
 const ACTIONS_WIDTH = 168
 const SLOP = 10
 
-type Gesture = 'idle' | 'pending' | 'swipe' | 'scroll'
 interface OpenRow {
   close: () => void
 }
@@ -40,6 +40,14 @@ interface SwipeRowProps {
   onCollapsed: () => void
   collapsing: boolean
   flash: boolean
+  reorderId: number
+  isReordering: boolean
+  registerReorderRow: (id: number, row: HTMLLIElement | null) => void
+  onReorderPointerDown: (id: number, event: React.PointerEvent<HTMLButtonElement>) => void
+  onReorderPointerMove: (event: React.PointerEvent<HTMLButtonElement>) => boolean
+  onReorderPointerUp: (event: React.PointerEvent<HTMLButtonElement>) => boolean
+  onReorderCancel: () => void
+  onReorderContextMenu: (event: React.MouseEvent) => void
 }
 
 function RowActions({
@@ -86,14 +94,17 @@ function RowActions({
 }
 
 // A Home row that follows a sideways swipe and reveals explicit Edit and Delete actions.
-export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed, collapsing, flash }: SwipeRowProps) {
+export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed, collapsing, flash,
+  reorderId, isReordering, registerReorderRow, onReorderPointerDown, onReorderPointerMove, onReorderPointerUp,
+  onReorderCancel, onReorderContextMenu,
+}: SwipeRowProps) {
   const row = useRef<HTMLLIElement>(null)
   const content = useRef<HTMLButtonElement>(null)
   const actions = useRef<HTMLDivElement>(null)
   const callbacks = useRef({ onTap, onEdit, onDelete, onCollapsed })
   const state = useRef({
     offset: 0,
-    gesture: 'idle' as Gesture,
+    gesture: 'idle' as SwipeGesture,
     startX: 0,
     startY: 0,
     base: 0,
@@ -169,47 +180,12 @@ export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed
     }
   }, [isOpen])
 
-  useEffect(() => {
-    const element = row.current
-    if (!element) return
-    const preventSwipeScroll = (event: TouchEvent) => {
-      const current = state.current
-      if (current.gesture === 'pending') {
-        const touch = event.touches[0]
-        if (touch) {
-          const dx = touch.clientX - current.startX
-          const dy = touch.clientY - current.startY
-          if (Math.hypot(dx, dy) > SLOP && Math.abs(dx) > Math.abs(dy)) {
-            current.gesture = 'swipe'
-            current.moved = true
-            current.startX += Math.sign(dx) * SLOP
-          }
-        }
-      }
-      if (current.gesture === 'swipe') event.preventDefault()
-    }
-    element.addEventListener('touchmove', preventSwipeScroll, { passive: false })
-    return () => element.removeEventListener('touchmove', preventSwipeScroll)
-  }, [])
-
-  useEffect(() => {
-    const element = row.current
-    if (!collapsing || !element) return
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    element.style.overflow = 'hidden'
-    element.style.height = `${element.offsetHeight}px`
-    void element.offsetHeight
-    element.style.transition = reduceMotion
-      ? 'opacity 200ms ease-out'
-      : 'height 300ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease-out'
-    if (!reduceMotion) element.style.height = '0px'
-    element.style.opacity = '0'
-    const timeout = window.setTimeout(() => callbacks.current.onCollapsed(), reduceMotion ? 200 : 320)
-    return () => window.clearTimeout(timeout)
-  }, [collapsing])
+  usePreventSwipeScroll(row, state)
+  useCollapseRow(row, collapsing, callbacks)
 
   const pointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (!event.isPrimary || event.button !== 0) return
+    onReorderPointerDown(reorderId, event)
     const current = state.current
     current.stop?.()
     Object.assign(current, {
@@ -225,6 +201,11 @@ export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed
   }
 
   const pointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (onReorderPointerMove(event)) {
+      state.current.gesture = 'reorder'
+      state.current.moved = true
+      return
+    }
     const current = state.current
     const dx = event.clientX - current.startX
     const dy = event.clientY - current.startY
@@ -251,7 +232,12 @@ export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed
     current.velocity.add(x, event.timeStamp)
   }
 
-  const pointerEnd = () => {
+  const pointerEnd = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (onReorderPointerUp(event)) {
+      state.current.gesture = 'idle'
+      state.current.moved = true
+      return
+    }
     const current = state.current
     if (current.gesture === 'swipe') {
       const velocity = current.velocity.get()
@@ -272,7 +258,14 @@ export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed
   }
 
   return (
-    <li ref={row} className="relative scroll-mb-[calc(env(safe-area-inset-bottom)+96px)] select-none will-change-transform [-webkit-touch-callout:none]">
+    <li
+      ref={(node) => {
+        row.current = node
+        registerReorderRow(reorderId, node)
+      }}
+      onContextMenu={onReorderContextMenu}
+      className="relative scroll-mb-[calc(env(safe-area-inset-bottom)+96px)] select-none will-change-transform [-webkit-touch-callout:none]"
+    >
       <RowActions
         actions={actions}
         label={label}
@@ -288,9 +281,12 @@ export function SwipeRow({ children, label, onTap, onEdit, onDelete, onCollapsed
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
         onPointerUp={pointerEnd}
-        onPointerCancel={pointerEnd}
+        onPointerCancel={(event) => {
+          onReorderCancel()
+          pointerEnd(event)
+        }}
         onClick={click}
-        className={`relative flex min-h-11 w-full touch-pan-y items-center gap-4 px-5 py-3 text-left transition-colors ease-out active:bg-surface-raised active:duration-0 ${flash ? 'bg-tint/15 duration-0' : 'bg-bg duration-700'}`}
+        className={`relative flex min-h-11 w-full touch-pan-y items-center gap-4 px-5 py-3 text-left transition-colors ease-out active:bg-surface-raised active:duration-0 ${isReordering ? 'bg-surface-raised duration-0' : flash ? 'bg-tint/15 duration-0' : 'bg-bg duration-700'}`}
       >
         <div className="min-w-0 flex-1">{children}</div>
       </button>

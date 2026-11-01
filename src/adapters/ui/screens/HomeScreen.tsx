@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { deleteExercise } from '../../../application/exercises'
+import { deleteExercise, moveExercise } from '../../../application/exercises'
 import { homeOverview, type HomeItem } from '../../../application/homeOverview'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day } from '../../../domain/entry'
@@ -9,6 +9,7 @@ import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from
 import { Kg } from '../Kg'
 import { openScreen } from '../router'
 import { SwipeRow } from '../SwipeRow'
+import { useReorder } from '../useReorder'
 import { ExercisePage } from './ExercisePage'
 
 // The user's exercises, each with its latest entry, current estimated 1RM and change.
@@ -21,12 +22,25 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
   const [collapsingId, setCollapsingId] = useState<number>()
   // The exercise just added: its row scrolls into view and lights up briefly.
   const [flash, setFlash] = useState<number>()
+  const reorder = useReorder(
+    items?.map((item) => item.exercise.id) ?? [],
+    (id, toIndex) => {
+      void moveExercise(store, id, toIndex).catch((error: unknown) => {
+        console.error('Reordering exercises failed', error)
+      })
+    },
+  )
 
   const visibleItems = items?.length
     ? [...items, ...(retiring && !items.some((item) => item.exercise.id === retiring.exercise.id) ? [retiring] : [])]
     : retiring
       ? [retiring]
       : items
+  const orderedItems = visibleItems?.slice().sort((left, right) => {
+    const leftIndex = reorder.order.indexOf(left.exercise.id)
+    const rightIndex = reorder.order.indexOf(right.exercise.id)
+    return (leftIndex < 0 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex < 0 ? Number.MAX_SAFE_INTEGER : rightIndex)
+  })
 
   const deletePrompt = (item: HomeItem) => {
     const { name } = item.exercise
@@ -73,20 +87,21 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
       </div>
       <p className="mt-1 px-5 text-subhead text-label-secondary">Estimated 1RM</p>
 
-      {visibleItems?.length === 0 ? (
+      {orderedItems?.length === 0 ? (
         <div className="mt-24 px-10 text-center">
           <p className="text-title">No exercises</p>
           <p className="mt-2 text-subhead text-label-secondary">Tap + to add one.</p>
         </div>
       ) : (
         <ul className="mt-4">
-          {visibleItems?.map((item) => (
+          {orderedItems?.map((item) => (
             <ExerciseRow
               key={item.exercise.id}
               item={item}
               today={today}
               lit={item.exercise.id === flash}
               collapsing={item.exercise.id === collapsingId}
+              reorder={reorder}
               onTap={() => openScreen({ name: 'exercise', id: item.exercise.id })}
               onEdit={() => setEditing(item)}
               onDelete={() => deleteFromRow(item)}
@@ -142,6 +157,7 @@ function ExerciseRow({
   onEdit,
   onDelete,
   onCollapsed,
+  reorder,
 }: {
   item: HomeItem
   today: Day
@@ -151,6 +167,7 @@ function ExerciseRow({
   onEdit: () => void
   onDelete: () => boolean
   onCollapsed: () => void
+  reorder: ReturnType<typeof useReorder>
 }) {
   const { exercise, current } = item
   const change = current?.change === undefined ? undefined : formatChange(current.change)
@@ -164,6 +181,14 @@ function ExerciseRow({
       onCollapsed={onCollapsed}
       collapsing={collapsing}
       flash={lit}
+      reorderId={exercise.id}
+      isReordering={reorder.draggingId === exercise.id}
+      registerReorderRow={reorder.registerRow}
+      onReorderPointerDown={reorder.pointerDown}
+      onReorderPointerMove={reorder.pointerMove}
+      onReorderPointerUp={reorder.pointerUp}
+      onReorderCancel={reorder.cancelPointer}
+      onReorderContextMenu={reorder.onContextMenu}
     >
       <div className="flex w-full items-center gap-4">
         <div className="min-w-0 flex-1">

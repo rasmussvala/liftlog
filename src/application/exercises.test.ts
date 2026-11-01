@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
 import { createDexieLogbookStore } from '../adapters/dexie/dexieLogbookStore'
-import { addExercise, deleteExercise, listExercises, renameExercise } from './exercises'
+import { addExercise, deleteExercise, listExercises, moveExercise, renameExercise } from './exercises'
 
 // A fresh database per test, seeded with the six starter exercises.
 const freshStore = () => createDexieLogbookStore(`test-${crypto.randomUUID()}`)
@@ -74,5 +74,21 @@ describe('deleteExercise', () => {
     expect(await store.getExercise(squat.id)).toBeUndefined()
     expect(await store.listEntries(squat.id)).toEqual([])
     expect(await store.listEntries(bench.id)).toEqual([benchEntry])
+  })
+})
+
+describe('moveExercise', () => {
+  it.each([
+    ['up', 3, 1, ['Squat', 'Overhead press', 'Bench press', 'Deadlift', 'Barbell row', 'Pull-up']],
+    ['down', 1, 3, ['Squat', 'Deadlift', 'Overhead press', 'Bench press', 'Barbell row', 'Pull-up']],
+    ['to the beginning', 4, 0, ['Barbell row', 'Squat', 'Bench press', 'Deadlift', 'Overhead press', 'Pull-up']],
+    ['to the end', 1, 5, ['Squat', 'Deadlift', 'Overhead press', 'Barbell row', 'Pull-up', 'Bench press']],
+  ])('moves an exercise %s and stores the new order', async (_description, from, to, expected) => {
+    const store = freshStore()
+    const before = await listExercises(store)
+
+    await moveExercise(store, before[from].id, to)
+
+    expect((await listExercises(store)).map((exercise) => exercise.name)).toEqual(expected)
   })
 })
