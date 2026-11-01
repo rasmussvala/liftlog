@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, expect, it } from 'vitest'
 import { createDexieLogbookStore } from '../adapters/dexie/dexieLogbookStore'
+import { addExercise } from './exercises'
 import { homeOverview } from './homeOverview'
 
 // A fresh database per test.
@@ -56,6 +57,26 @@ describe('homeOverview', () => {
     const [squatItem, ...others] = await homeOverview(store)
     expect(squatItem.current).toBeDefined()
     expect(others.every((item) => item.current === undefined)).toBe(true)
+  })
+
+  it("gives each item its exercise's entry count", async () => {
+    const store = freshStore()
+    const [squat, bench] = await store.listExercises()
+    await store.addEntry({ exerciseId: squat.id, day: '2026-10-01', weightKg: 100, reps: 5 })
+    await store.addEntry({ exerciseId: squat.id, day: '2026-10-08', weightKg: 105, reps: 5 })
+    await store.addEntry({ exerciseId: bench.id, day: '2026-10-01', weightKg: 80, reps: 5 })
+
+    const counts = (await homeOverview(store)).map((item) => item.entryCount)
+    expect(counts).toEqual([2, 1, 0, 0, 0, 0])
+  })
+
+  it('lists an added exercise last, with no entries', async () => {
+    const store = freshStore()
+    await addExercise(store, 'Front squat')
+    const last = (await homeOverview(store)).at(-1)
+    expect(last?.exercise.name).toBe('Front squat')
+    expect(last?.entryCount).toBe(0)
+    expect(last?.current).toBeUndefined()
   })
 
   it("doesn't add the starter exercises again when the database is opened later", async () => {

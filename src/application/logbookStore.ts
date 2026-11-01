@@ -3,10 +3,13 @@ import type { Exercise } from '../domain/exercise'
 
 // The only port: how use cases reach storage. Dexie is its only adapter (ADR 0004).
 export interface LogbookStore {
-  // In the order they were added.
+  // By position: the user's order on Home.
   listExercises(): Promise<Exercise[]>
   // Undefined when there's no exercise with this id.
   getExercise(id: number): Promise<Exercise | undefined>
+  // Stores a new exercise at the end (the position after the last one) and returns it.
+  // Takes the name as given: the use case checks it.
+  addExercise(name: string): Promise<Exercise>
   // One exercise's entries, oldest day first.
   listEntries(exerciseId: number): Promise<Entry[]>
   // Rejects a second entry for the same exercise and day (ADR 0001).
