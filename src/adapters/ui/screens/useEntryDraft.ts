@@ -27,7 +27,7 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
   const valid = check.weightKg !== undefined && check.reps !== undefined
 
   // Where the steppers start without a valid typed value: the saved values when editing, else the latest entry.
-  // Only the latest entry shows as grey placeholders, and not while editing.
+  // The latest entry shows as grey placeholders (0 and 0 for a first entry), but not while editing.
   const latest = editing ? undefined : entries[0]
   const stepFrom = editing ?? latest
   const weightBase = check.weightKg ?? stepFrom?.weightKg ?? 0
@@ -44,7 +44,11 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
     editing,
     weight,
     reps,
-    placeholder: latest && { weight: formatWeight(latest.weightKg), reps: String(latest.reps) },
+    placeholder: editing
+      ? undefined
+      : latest
+        ? { weight: formatWeight(latest.weightKg), reps: String(latest.reps) }
+        : { weight: '0', reps: '0' },
     // Both values, once both are valid.
     values: valid ? { weightKg: check.weightKg!, reps: check.reps! } : undefined,
     estimated1RM: valid ? estimate1RM(check.weightKg!, check.reps!) : undefined,
