@@ -195,7 +195,7 @@ function EmptyState() {
     <div className="mt-8 px-5">
       <p className="text-headline">No entries yet</p>
       <p className="mt-1 text-subhead text-label-secondary">
-        Tap + to log your first set. Targets show up once you have one.
+        Tap + to log your first set.
       </p>
     </div>
   )
