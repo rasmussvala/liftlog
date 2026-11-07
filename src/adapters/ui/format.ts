@@ -1,7 +1,7 @@
 // Display formatting for screens. Today's date comes from the local clock here, never from domain/.
 import type { Day, RepsProblem, WeightProblem } from '../../domain/entry'
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 // The user's local date as a Day ("2026-10-31").
 export function localToday(now = new Date()): Day {
