@@ -19,6 +19,10 @@ One exercise with all its entries, newest first. What the exercise screen shows.
 The heaviest single rep the user could likely lift, worked out from an entry with the Epley formula. It is always derived from an entry, never entered directly.
 _Avoid_: Max, PR, one-rep max (on its own)
 
+**Target**:
+The lightest weight, in 2.5 kg steps, that at a given number of reps would give an Estimated 1RM above the current one. The exercise screen shows one for every rep count from 1 to 12.
+_Avoid_: Goal, suggestion
+
 **Backup**:
 A file holding all exercises and entries, which the user exports and can import to restore their data.
 _Avoid_: Export, dump, snapshot

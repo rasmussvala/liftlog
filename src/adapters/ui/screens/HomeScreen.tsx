@@ -1,10 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { deleteExercise, moveExercise } from '../../../application/exercises'
 import { homeOverview, type HomeItem } from '../../../application/homeOverview'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day } from '../../../domain/entry'
+import { FloatingPlus } from '../FloatingPlus'
 import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from '../format'
 import { Kg } from '../Kg'
 import { openScreen } from '../router'
@@ -114,13 +115,7 @@ export function HomeScreen({ store }: { store: LogbookStore }) {
         </ul>
       )}
 
-      <button
-        aria-label="Add exercise"
-        onClick={() => setAdding(true)}
-        className="fixed right-5 bottom-[calc(env(safe-area-inset-bottom)+20px)] z-10 grid size-14 place-items-center rounded-full bg-tint text-on-tint shadow-lg transition-transform duration-150 ease-out motion-safe:active:scale-[0.94]"
-      >
-        <Plus size={28} strokeWidth={2.25} aria-hidden />
-      </button>
+      <FloatingPlus label="Add exercise" onClick={() => setAdding(true)} />
 
       {(adding || editing) && (
         <ExercisePage
