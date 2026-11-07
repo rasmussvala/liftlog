@@ -135,16 +135,12 @@ const variants: { name: string; render: () => ReactNode }[] = [
 // The real exercise screen around the variant: chart, Targets, Log entry, history.
 function Screen({ children }: { children: ReactNode }) {
   return (
+    <>
     <PushedScreen title="Bench press" slideIn={false}>
       <ProgressChart entries={entries} today={today} />
       {children}
-      <button
-        className={`mx-5 mt-6 flex min-h-11 w-[calc(100%-2.5rem)] items-center justify-center gap-2 rounded-card bg-tint p-4 text-headline text-on-tint ${press}`}
-      >
-        <Plus size={24} strokeWidth={2.25} aria-hidden />
-        Log entry
-      </button>
-      <ul className="mt-6 ml-5 grid grid-cols-[auto_auto_1fr_auto_auto] tabular-nums">
+      {/* Room at the end so the floating + never covers the last row. */}
+      <ul className="mt-6 mb-20 ml-5 grid grid-cols-[auto_auto_1fr_auto_auto] tabular-nums">
         {entries.map((e) => (
           <li key={e.id} className="col-span-full grid grid-cols-subgrid items-baseline border-b border-separator py-3 last:border-b-0">
             <span className="text-right text-body">
@@ -162,6 +158,14 @@ function Screen({ children }: { children: ReactNode }) {
         ))}
       </ul>
     </PushedScreen>
+    {/* Log entry: the same floating + as Home, so it's always on screen. */}
+    <button
+      aria-label="Log entry"
+      className="fixed right-5 bottom-[calc(env(safe-area-inset-bottom)+20px)] z-30 grid size-14 place-items-center rounded-full bg-tint text-on-tint shadow-lg transition-transform duration-150 ease-out motion-safe:active:scale-[0.94]"
+    >
+      <Plus size={28} strokeWidth={2.25} aria-hidden />
+    </button>
+    </>
   )
 }
 
@@ -176,6 +180,7 @@ const pickerCss = `
 .proto-picker-item:active{transform:scale(.97)}
 .proto-picker-item:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px}
 .proto-picker-item[data-active]{color:#fff}
+.proto-picker[data-position="top"]{bottom:auto;top:24px}
 `
 
 function Harness() {
@@ -226,7 +231,7 @@ function Harness() {
     <>
       <style>{pickerCss}</style>
       <Screen key={current}>{variants[current].render()}</Screen>
-      <nav className="proto-picker" aria-label="Prototype variants" data-ready={ready ? '' : undefined}>
+      <nav className="proto-picker" aria-label="Prototype variants" data-position="top" data-ready={ready ? '' : undefined}>
         <span ref={highlight} className="proto-picker-highlight" aria-hidden="true" />
         {variants.map((v, i) => (
           <button
