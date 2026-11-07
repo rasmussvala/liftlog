@@ -126,20 +126,94 @@ function PickerVariant() {
   )
 }
 
-const variants: { name: string; render: () => ReactNode }[] = [
+// 4 — Tabs: a segmented control under the chart switches between History and Targets.
+// Targets rows match the history rows, so both tabs read as the same kind of list.
+function TabsVariant() {
+  const [tab, setTab] = useState<'history' | 'targets'>('history')
+  const tabs = [
+    { id: 'history', label: 'History' },
+    { id: 'targets', label: 'Targets' },
+  ] as const
+  return (
+    <>
+      <div role="tablist" className="relative mx-5 mt-8 grid grid-cols-2 rounded-full bg-surface-raised p-1 dark:bg-surface">
+        {/* The selected segment slides under the labels. */}
+        <span
+          aria-hidden
+          className="absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-surface shadow-sm shadow-shadow/20 dark:bg-surface-raised motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-out"
+          style={{ transform: tab === 'targets' ? 'translateX(100%)' : undefined }}
+        />
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={`relative min-h-11 rounded-full text-headline transition-opacity duration-150 ease-out active:opacity-60 active:duration-0 ${tab === t.id ? 'text-label' : 'text-label-secondary'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'history' ? (
+        <History />
+      ) : (
+        <>
+          <p className="mt-4 px-5 text-subhead text-label-secondary">
+            Beat {formatEstimate(beat)} kg. Lift any of these for a new best.
+          </p>
+          <ul className="mt-2 mb-20 ml-5 tabular-nums">
+            {targets.map((t) => (
+              <li
+                key={t.reps}
+                className="flex min-h-11 items-baseline justify-between border-b border-separator py-3 pr-5 last:border-b-0"
+              >
+                <span className="text-body text-label-secondary">
+                  {t.reps} {t.reps === 1 ? 'rep' : 'reps'}
+                </span>
+                <span className="text-headline">
+                  {formatWeight(t.weightKg)}
+                  <Kg />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  )
+}
+
+const variants: { name: string; ownsHistory?: boolean; render: () => ReactNode }[] = [
   { name: 'List', render: () => <ListVariant /> },
   { name: 'Grid', render: () => <GridVariant /> },
   { name: 'Picker', render: () => <PickerVariant /> },
+  { name: 'Tabs', ownsHistory: true, render: () => <TabsVariant /> },
 ]
 
-// The real exercise screen around the variant: chart, Targets, Log entry, history.
-function Screen({ children }: { children: ReactNode }) {
+// The real exercise screen around the variant: chart, Targets, history, and the floating + for Log entry.
+function Screen({ children, history = true }: { children: ReactNode; history?: boolean }) {
   return (
     <>
-    <PushedScreen title="Bench press" slideIn={false}>
-      <ProgressChart entries={entries} today={today} />
-      {children}
-      {/* Room at the end so the floating + never covers the last row. */}
+      <PushedScreen title="Bench press" slideIn={false}>
+        <ProgressChart entries={entries} today={today} />
+        {children}
+        {history && <History />}
+      </PushedScreen>
+      {/* Log entry: the same floating + as Home, so it's always on screen. */}
+      <button
+        aria-label="Log entry"
+        className="fixed right-5 bottom-[calc(env(safe-area-inset-bottom)+20px)] z-30 grid size-14 place-items-center rounded-full bg-tint text-on-tint shadow-lg transition-transform duration-150 ease-out motion-safe:active:scale-[0.94]"
+      >
+        <Plus size={28} strokeWidth={2.25} aria-hidden />
+      </button>
+    </>
+  )
+}
+
+function History() {
+  return (
+      // Room at the end so the floating + never covers the last row.
       <ul className="mt-6 mb-20 ml-5 grid grid-cols-[auto_auto_1fr_auto_auto] tabular-nums">
         {entries.map((e) => (
           <li key={e.id} className="col-span-full grid grid-cols-subgrid items-baseline border-b border-separator py-3 last:border-b-0">
@@ -157,15 +231,6 @@ function Screen({ children }: { children: ReactNode }) {
           </li>
         ))}
       </ul>
-    </PushedScreen>
-    {/* Log entry: the same floating + as Home, so it's always on screen. */}
-    <button
-      aria-label="Log entry"
-      className="fixed right-5 bottom-[calc(env(safe-area-inset-bottom)+20px)] z-30 grid size-14 place-items-center rounded-full bg-tint text-on-tint shadow-lg transition-transform duration-150 ease-out motion-safe:active:scale-[0.94]"
-    >
-      <Plus size={28} strokeWidth={2.25} aria-hidden />
-    </button>
-    </>
   )
 }
 
@@ -230,7 +295,9 @@ function Harness() {
   return (
     <>
       <style>{pickerCss}</style>
-      <Screen key={current}>{variants[current].render()}</Screen>
+      <Screen key={current} history={!variants[current].ownsHistory}>
+        {variants[current].render()}
+      </Screen>
       <nav className="proto-picker" aria-label="Prototype variants" data-position="top" data-ready={ready ? '' : undefined}>
         <span ref={highlight} className="proto-picker-highlight" aria-hidden="true" />
         {variants.map((v, i) => (
