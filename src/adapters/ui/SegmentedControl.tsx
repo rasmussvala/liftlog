@@ -4,17 +4,21 @@ export function SegmentedControl<Id extends string>({
   segments,
   selected,
   onSelect,
+  label,
   className = '',
 }: {
   segments: readonly { id: Id; label: string }[]
   selected: Id
   onSelect: (id: Id) => void
+  // What the tabs choose, for VoiceOver ("Range").
+  label?: string
   className?: string
 }) {
   const index = segments.findIndex((s) => s.id === selected)
   return (
     <div
       role="tablist"
+      aria-label={label}
       className={`relative grid auto-cols-fr grid-flow-col rounded-full bg-surface-raised p-1 dark:bg-surface ${className}`}
     >
       <span

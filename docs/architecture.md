@@ -27,6 +27,7 @@ src/
 | `exercise.ts` | `Exercise` (with its `position` on Home), `STARTER_EXERCISES`, `validateExerciseName(name, otherNames)`: the trimmed name, or `blank` / `too-long` / `taken` |
 | `entry.ts` | `Entry`, `Day` (`"2026-10-31"`, the user's local date), `validateEntry(weightText, repsText)`: the parsed values or a problem code per field |
 | `progress.ts` | `estimate1RM(weightKg, reps)`, `currentEstimate(entries) → { latest, estimated1RM, change }`, `progress(entries) → { day, estimated1RM }[]` (oldest first, for the chart), `targets(entries) → { beat, targets: { reps, weightKg }[] }` (one Target per rep count, 1–12; `TARGET_STEP_KG` is the 2.5 kg step) |
+| `progressChart.ts` | The progress chart's model. `Range` (`M` / `6M` / `Y` / `All`), `openingRange(entries, today)`, `chartModel(entries, today, range, offset)`: for a period (0 = the current one), the window as day numbers, its entries, Best, the change, the header's dates, the y-axis `scale` and `maxOffset`. Also `chartPoints`, `rangeLength`, `windowAt`, `dayNumber` / `dayFromNumber` |
 | `backup.ts` | `BackupData`, `serializeBackup(data)`, `parseBackup(json)`: checks the file and upgrades old versions |
 
 ### application/
@@ -58,12 +59,16 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/physics.ts` | Spring, flick projection and rubber-banding for gestures |
 | `ui/Kg.tsx` | The grey " kg" unit after a weight |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change, entry warnings; `localToday()` |
-| `ui/screens/ExerciseScreen.tsx` | Progress chart, then a History \| Targets segmented control (always opens on History; saving an entry switches back to it). History is newest first, and a row opens its entry to edit or delete. Targets lists one row per rep count. A floating + opens Log entry. No entries: a short message and no tabs |
+| `ui/screens/ExerciseScreen.tsx` | Progress chart, then a History \| Targets segmented control (always opens on History; saving an entry switches back to it). History is newest first, and a row opens its entry to edit or delete. Targets lists one row per rep count, to beat the latest entry. A floating + opens Log entry. No entries: the chart's empty frame, a short message and no tabs |
 | `ui/screens/EntryPage.tsx` | Log, edit or delete an entry, on a `CoverPage`. Opened from a history row, the day is locked |
 | `ui/screens/ExercisePage.tsx` | New exercise / Edit exercise, on a `CoverPage`: the name, and Delete exercise when editing |
 | `ui/screens/useEntryDraft.ts` | The entry page's form state: typed text, placeholders, steppers, warnings |
 | `ui/screens/SettingsScreen.tsx` | WIP. Later: export/import |
-| `ui/ProgressChart.tsx` | The progress chart, hand-drawn SVG with no chart library: tap or slide to read an entry |
+| `ui/ProgressChart.tsx` | The progress chart, after Apple Health's: a Range control, a fixed header, tap or hold-and-slide to read an entry, swipe sideways between periods. Shown for any number of entries |
+| `ui/ChartPlot.tsx` | The chart's SVG drawing, with no chart library: gridlines, dated labels, the line and hollow dots |
+| `ui/chartAxis.ts` | The chart's geometry and its dated vertical gridlines (weeks, months, quarters or years) |
+| `ui/chartMotion.ts` | `useSpring` and the chart's one-finger gesture (tap, hold to scrub, pan, or let the page scroll) |
+| `ui/rangePreference.ts` | The last picked Range, remembered per device in browser storage (not in Backups) |
 | `ui/backupFile.ts` | Download a backup, read a picked file |
 
 ## Testing
