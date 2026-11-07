@@ -23,8 +23,12 @@ const sets: [string, number, number][] = [
   ['2026-10-03', 75, 7],
   ['2026-09-26', 72.5, 8],
 ]
-const entries: Entry[] = sets.map(([day, weightKg, reps], i) => ({ id: i + 1, exerciseId: 1, day, weightKg, reps }))
-const beat = currentEstimate(entries)!.estimated1RM
+// ?entries=N shows only the N newest entries (0 for an empty exercise).
+const shown = parseInt(new URLSearchParams(location.search).get('entries') ?? '', 10)
+const entries: Entry[] = sets
+  .slice(0, Number.isNaN(shown) ? undefined : shown)
+  .map(([day, weightKg, reps], i) => ({ id: i + 1, exerciseId: 1, day, weightKg, reps }))
+const beat = currentEstimate(entries)?.estimated1RM ?? 0
 
 // The spec's rule: lightest 2.5 kg multiple whose estimated 1RM is strictly above beat.
 const STEP = 2.5
@@ -134,6 +138,8 @@ function TabsVariant() {
     { id: 'history', label: 'History' },
     { id: 'targets', label: 'Targets' },
   ] as const
+  // No entries: no tabs, nothing to beat. Point at the + instead.
+  if (entries.length === 0) return <EmptyState />
   return (
     <>
       <div role="tablist" className="relative mx-5 mt-8 grid grid-cols-2 rounded-full bg-surface-raised p-1 dark:bg-surface">
@@ -184,10 +190,21 @@ function TabsVariant() {
   )
 }
 
+function EmptyState() {
+  return (
+    <div className="mt-8 px-5">
+      <p className="text-headline">No entries yet</p>
+      <p className="mt-1 text-subhead text-label-secondary">
+        Tap + to log your first set. Targets show up once you have one.
+      </p>
+    </div>
+  )
+}
+
 const variants: { name: string; ownsHistory?: boolean; render: () => ReactNode }[] = [
-  { name: 'List', render: () => <ListVariant /> },
-  { name: 'Grid', render: () => <GridVariant /> },
-  { name: 'Picker', render: () => <PickerVariant /> },
+  { name: 'List', render: () => entries.length > 0 && <ListVariant /> },
+  { name: 'Grid', render: () => entries.length > 0 && <GridVariant /> },
+  { name: 'Picker', render: () => entries.length > 0 && <PickerVariant /> },
   { name: 'Tabs', ownsHistory: true, render: () => <TabsVariant /> },
 ]
 
@@ -198,7 +215,7 @@ function Screen({ children, history = true }: { children: ReactNode; history?: b
       <PushedScreen title="Bench press" slideIn={false}>
         <ProgressChart entries={entries} today={today} />
         {children}
-        {history && <History />}
+        {history && (entries.length > 0 ? <History /> : <EmptyState />)}
       </PushedScreen>
       {/* Log entry: the same floating + as Home, so it's always on screen. */}
       <button
