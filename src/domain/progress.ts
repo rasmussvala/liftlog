@@ -1,4 +1,4 @@
-import type { Day, Entry } from './entry'
+import { MAX_REPS, MIN_REPS, type Day, type Entry } from './entry'
 
 // Estimated one-rep max (kg) with the Epley formula: w × (1 + reps / 30).
 // A single rep is already a 1RM, so it is returned as is.
@@ -35,4 +35,36 @@ export function progress(entries: readonly Entry[]): ProgressPoint[] {
   return entries
     .toSorted((a, b) => a.day.localeCompare(b.day))
     .map((entry) => ({ day: entry.day, estimated1RM: estimate1RM(entry.weightKg, entry.reps) }))
+}
+
+// Targets are rounded to this step, so they can be loaded with standard plates.
+export const TARGET_STEP_KG = 2.5
+
+// The lightest weight, in TARGET_STEP_KG steps, that at these reps gives an estimated 1RM above the current one.
+export interface Target {
+  reps: number
+  weightKg: number
+}
+
+export interface Targets {
+  // The current estimated 1RM, from the latest entry: every Target strictly beats it.
+  beat: number
+  // One per rep count from MIN_REPS to MAX_REPS, ascending.
+  targets: Target[]
+}
+
+// What to lift next, from the latest entry. Undefined with no entries. Entries may come in any order.
+export function targets(entries: readonly Entry[]): Targets | undefined {
+  const current = currentEstimate(entries)
+  if (!current) return undefined
+  const beat = current.estimated1RM
+  const targets: Target[] = []
+  for (let reps = MIN_REPS; reps <= MAX_REPS; reps++) {
+    // Epley backwards (estimate1RM of 1 kg is the multiplier), rounded up to the step.
+    let weightKg = Math.ceil(beat / estimate1RM(1, reps) / TARGET_STEP_KG) * TARGET_STEP_KG
+    // An exact landing (or floating-point error) only matches beat: go one step up.
+    if (!(estimate1RM(weightKg, reps) > beat)) weightKg += TARGET_STEP_KG
+    targets.push({ reps, weightKg })
+  }
+  return { beat, targets }
 }

@@ -26,7 +26,7 @@ src/
 |---|---|
 | `exercise.ts` | `Exercise` (with its `position` on Home), `STARTER_EXERCISES`, `validateExerciseName(name, otherNames)`: the trimmed name, or `blank` / `too-long` / `taken` |
 | `entry.ts` | `Entry`, `Day` (`"2026-10-31"`, the user's local date), `validateEntry(weightText, repsText)`: the parsed values or a problem code per field |
-| `progress.ts` | `estimate1RM(weightKg, reps)`, `currentEstimate(entries) → { latest, estimated1RM, change }`, `progress(entries) → { day, estimated1RM }[]` (oldest first, for the chart) |
+| `progress.ts` | `estimate1RM(weightKg, reps)`, `currentEstimate(entries) → { latest, estimated1RM, change }`, `progress(entries) → { day, estimated1RM }[]` (oldest first, for the chart), `targets(entries) → { beat, targets: { reps, weightKg }[] }` (one Target per rep count, 1–12; `TARGET_STEP_KG` is the 2.5 kg step) |
 | `backup.ts` | `BackupData`, `serializeBackup(data)`, `parseBackup(json)`: checks the file and upgrades old versions |
 
 ### application/
@@ -49,6 +49,8 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/router.ts` | Hash routing: `Route`, `useRoute()`, `href(route)`, `openScreen(route)`, `goHome()` ([ADR 0003](adr/0003-hash-routing.md)) |
 | `ui/PushedScreen.tsx` | The layout for a screen opened from Home: slide-in, "‹ Lifts" back button, large title |
 | `ui/CoverPage.tsx` | A full-screen page over a screen: slides up, header with its own buttons, no drag to dismiss |
+| `ui/FloatingPlus.tsx` | The round + fixed bottom-right: Add exercise on Home, Log entry on the exercise screen |
+| `ui/SegmentedControl.tsx` | A pill of equal segments with a sliding selection, accessible as tabs |
 | `ui/press.ts` | `press`: the touch-down scale for pressables (the entry page and Log entry use it) |
 | `ui/screens/HomeScreen.tsx` | The user's exercises, in their order. + opens New exercise; swipe a row left to edit or delete it; long-press and drag to reorder |
 | `ui/SwipeRow.tsx` | A list row that swipes left to show Edit and Delete |
@@ -56,7 +58,7 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/physics.ts` | Spring, flick projection and rubber-banding for gestures |
 | `ui/Kg.tsx` | The grey " kg" unit after a weight |
 | `ui/format.ts` | Display formatting: day labels, weights, 1RM, change, entry warnings; `localToday()` |
-| `ui/screens/ExerciseScreen.tsx` | Progress chart, then the Log entry button, then history, newest first. A history row opens its entry to edit or delete |
+| `ui/screens/ExerciseScreen.tsx` | Progress chart, then a History \| Targets segmented control (always opens on History; saving an entry switches back to it). History is newest first, and a row opens its entry to edit or delete. Targets lists one row per rep count. A floating + opens Log entry. No entries: a short message and no tabs |
 | `ui/screens/EntryPage.tsx` | Log, edit or delete an entry, on a `CoverPage`. Opened from a history row, the day is locked |
 | `ui/screens/ExercisePage.tsx` | New exercise / Edit exercise, on a `CoverPage`: the name, and Delete exercise when editing |
 | `ui/screens/useEntryDraft.ts` | The entry page's form state: typed text, placeholders, steppers, warnings |
