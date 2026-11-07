@@ -23,7 +23,7 @@ function App({ store }: { store: LogbookStore }) {
         <HomeScreen store={store} />
       </div>
       {route.name === 'exercise' && <ExerciseScreen key={route.id} store={store} id={route.id} slideIn={slideIn} />}
-      {route.name === 'settings' && <SettingsScreen slideIn={slideIn} />}
+      {route.name === 'settings' && <SettingsScreen store={store} slideIn={slideIn} />}
     </>
   )
 }
