@@ -51,7 +51,7 @@ Use cases are plain functions that take the store as their first argument. Anyth
 | `ui/CoverPage.tsx` | A full-screen page over a screen: slides up, header with its own buttons, no drag to dismiss |
 | `ui/FloatingPlus.tsx` | The round + fixed bottom-right: Add exercise on Home, Log entry on the exercise screen |
 | `ui/SegmentedControl.tsx` | A pill of equal segments with a sliding selection, accessible as tabs |
-| `ui/press.ts` | `press`: the touch-down scale for pressables (the entry page and Log entry use it) |
+| `ui/press.ts` | `press`: the touch-down scale for pressables (the entry page and exercise page use it) |
 | `ui/screens/HomeScreen.tsx` | The user's exercises, in their order. + opens New exercise; swipe a row left to edit or delete it; long-press and drag to reorder |
 | `ui/SwipeRow.tsx` | A list row that swipes left to show Edit and Delete |
 | `ui/useReorder.ts` | Long-press and drag to reorder a list |

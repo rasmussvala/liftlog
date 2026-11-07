@@ -58,13 +58,13 @@ export function targets(entries: readonly Entry[]): Targets | undefined {
   const current = currentEstimate(entries)
   if (!current) return undefined
   const beat = current.estimated1RM
-  const targets: Target[] = []
+  const rows: Target[] = []
   for (let reps = MIN_REPS; reps <= MAX_REPS; reps++) {
     // Epley backwards (estimate1RM of 1 kg is the multiplier), rounded up to the step.
     let weightKg = Math.ceil(beat / estimate1RM(1, reps) / TARGET_STEP_KG) * TARGET_STEP_KG
     // An exact landing (or floating-point error) only matches beat: go one step up.
     if (!(estimate1RM(weightKg, reps) > beat)) weightKg += TARGET_STEP_KG
-    targets.push({ reps, weightKg })
+    rows.push({ reps, weightKg })
   }
-  return { beat, targets }
+  return { beat, targets: rows }
 }

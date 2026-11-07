@@ -42,13 +42,14 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
   }, [log])
 
   const found = log && log !== 'not-found' ? log : undefined
+  const entries = found?.entries.map((item) => item.entry) ?? []
 
   return (
     <>
       <PushedScreen title={found?.exercise.name ?? ''} slideIn={slideIn}>
         {found && (
           <>
-            <ProgressChart entries={found.entries.map((item) => item.entry)} today={today} />
+            <ProgressChart entries={entries} today={today} />
             {found.entries.length === 0 ? (
               <div className="mt-8 px-5">
                 <p className="text-headline">No entries yet</p>
@@ -72,7 +73,7 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
                     ))}
                   </ul>
                 ) : (
-                  <TargetsList entries={found.entries.map((item) => item.entry)} />
+                  <TargetsList entries={entries} />
                 )}
               </>
             )}
@@ -85,7 +86,7 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
         <EntryPage
           store={store}
           exerciseId={found.exercise.id}
-          entries={found.entries.map((item) => item.entry)}
+          entries={entries}
           startDay={entryPage.day}
           dayLocked={entryPage.dayLocked}
           today={today}
