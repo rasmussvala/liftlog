@@ -1,7 +1,7 @@
 // PROTOTYPE ONLY (#46): three layouts for the Backup section in Settings, switchable via ?variant=.
 // Export and import are stubs: nothing is written or read. The state bar sets the Last backup date.
 import { FileDown, FileUp, Share } from 'lucide-react'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { press } from '../press'
 import { PrototypeSwitcher, useVariant } from '../PrototypeSwitcher'
 
@@ -187,7 +187,29 @@ function PrototypeDialog({ kind, onClose }: { kind: 'export' | 'import'; onClose
   )
 }
 
-export function BackupSectionPrototype() {
+// D's Version, in the same grouped-list style as its Backup section.
+function VersionD() {
+  const row = 'flex min-h-12 items-center justify-between px-5 text-body'
+  return (
+    <section className="mt-6 px-5" aria-label="App version">
+      <h2 className="px-1 text-headline">About</h2>
+      <div className="mt-2 overflow-hidden rounded-card bg-surface">
+        <div className={row}>
+          Version
+          <span className="text-label-secondary">{__APP_VERSION__}</span>
+        </div>
+        <div className="ml-5 border-t border-separator" />
+        <div className={row}>
+          Build
+          <span className="text-label-secondary">{__APP_COMMIT__}</span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// `version` is the screen's current Version section, shown under every variant but D.
+export function BackupSectionPrototype({ version }: { version: ReactNode }) {
   const [variant, setVariant] = useVariant(VARIANTS.map((v) => v.key))
   const [state, setState] = useState<string>('none')
   const [lastBackup, setLastBackup] = useState<number | null>(null)
@@ -219,6 +241,7 @@ export function BackupSectionPrototype() {
       {variant === 'B' && <VariantB {...props} />}
       {variant === 'C' && <VariantC {...props} />}
       {variant === 'D' && <VariantD {...props} />}
+      {variant === 'D' ? <VersionD /> : version}
       {dialog && <PrototypeDialog kind={dialog} onClose={close} />}
       <PrototypeSwitcher
         variants={VARIANTS}
