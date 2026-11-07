@@ -51,10 +51,8 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
           <>
             <ProgressChart entries={entries} today={today} />
             {found.entries.length === 0 ? (
-              <div className="mt-8 px-5">
-                <p className="text-headline">No entries yet</p>
-                <p className="mt-1 text-subhead text-label-secondary">Tap + to log your first set.</p>
-              </div>
+              // The chart's empty frame already says sets will show up there, so this only says how.
+              <p className="mt-8 px-5 text-subhead text-label-secondary">Tap + to log your first set.</p>
             ) : (
               <>
                 <SegmentedControl segments={TABS} selected={tab} onSelect={setTab} className="mx-5 mt-8" />
@@ -137,14 +135,14 @@ function HistoryRow({ item: { entry, estimated1RM }, today, lit, onOpen }: Histo
   )
 }
 
-// What to lift next: the number to beat, then one row per rep count, styled like the history rows.
+// What to lift next: the latest Estimated 1RM, which every Target beats, then one row per rep count, styled like the history rows.
 function TargetsList({ entries }: { entries: readonly Entry[] }) {
   const table = targets(entries)
   if (!table) return null
   return (
     <div role="tabpanel">
       <p className="mt-4 px-5 text-subhead text-label-secondary">
-        Beat {formatEstimate(table.beat)} kg. Lift any of these for a new best.
+        Your latest is {formatEstimate(table.beat)} kg. Lift any of these to beat it.
       </p>
       {/* Room at the end so the floating + never covers the last row. */}
       <ul className="mt-2 mb-20 ml-5 tabular-nums">

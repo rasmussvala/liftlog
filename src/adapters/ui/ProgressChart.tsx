@@ -1,174 +1,194 @@
-// The exercise screen's progress chart: every entry's estimated 1RM over real time, drawn as plain SVG.
-// Tap a point, or press and slide along the chart, to read one entry in a callout above it.
-// Vertical swipes still scroll the page (touch-pan-y). Tapping anywhere outside the chart hides the callout.
-import { useEffect, useId, useLayoutEffect, useRef, useState, type PointerEvent } from 'react'
+// The exercise screen's progress chart, after Apple Health's Cardio Fitness chart: a Range control,
+// a fixed header, and Entries as hollow dots on a line, with gridlines.
+// Tap picks the nearest Entry; hold then slide scrubs; swipe sideways to go back or forward one period;
+// up/down scrolls the page. Panning, zooming between Ranges and rescaling the y-axis all run on springs,
+// so any of them can be grabbed mid-flight. Tapping anywhere outside the chart clears the picked Entry.
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Day, Entry } from '../../domain/entry'
-import { progress } from '../../domain/progress'
-import { dayLabel, formatEstimate, formatWeight } from './format'
+import { chartModel, chartPoints, openingRange, rangeLength, RANGES, windowAt, type ChartModel, type ChartPoint, type ChartScale, type Range } from '../../domain/progressChart'
+import { plotX, PLOT_W, W } from './chartAxis'
+import { ChartPlot } from './ChartPlot'
+import { useChartGesture, useSpring } from './chartMotion'
+import { dayLabel, formatChange, formatEstimate, formatWeight } from './format'
 import { Kg } from './Kg'
+import { project, rubberband } from './physics'
+import { rememberedRange, rememberRange } from './rangePreference'
+import { SegmentedControl } from './SegmentedControl'
 
-// Drawing size in SVG units. The SVG scales to the screen's width.
-const W = 350
-const H = 170
-const PAD = { top: 20, right: 16, bottom: 26, left: 16 }
-// Share of the data's range added above and below, so points don't touch the edges.
-const Y_MARGIN = 0.15
-// The middle date label is left out when it's closer than this to either end, so labels never overlap.
-const MIN_LABEL_GAP = W / 4
+const SEGMENTS = RANGES.map((range) => ({ id: range, label: range }))
+// Gridlines for a chart with no Entries at all. They're drawn without values. Three gaps, so the
+// empty-chart message sits between two lines rather than on one.
+const EMPTY_SCALE: ChartScale = { lo: 0, hi: 30, ticks: [0, 10, 20, 30] }
+// Spring responses, in seconds.
+const PAN_RESPONSE = 0.35
+const ZOOM_RESPONSE = 0.4
+const SCALE_RESPONSE = 0.35
 
-const time = (day: Day) => new Date(`${day}T12:00:00`).getTime()
-
-// Hidden with fewer than 2 entries. Entries may come in any order.
+// Shown for any number of Entries. Entries may come in any order.
 export function ProgressChart({ entries, today }: { entries: readonly Entry[]; today: Day }) {
-  const [selected, setSelected] = useState<number>()
+  const [range, setRange] = useState<Range>(() => rememberedRange() ?? openingRange(entries, today))
+  // The period the chart is on, or sliding to (0 = the current one). Changes on release, not mid-drag,
+  // so the header and y-axis hold still while the finger is down.
+  const [chosenOffset, setOffset] = useState(0)
+  const [pickedDay, setPickedDay] = useState<Day>()
   const svg = useRef<SVGSVGElement>(null)
-  const callout = useRef<HTMLDivElement>(null)
-  const scrubbing = useRef(false)
-  const fillId = useId()
 
-  // Any touch outside the chart hides the callout.
+  const length = rangeLength(range, entries, today)
+  // A deleted Entry can leave the chosen period beyond the history.
+  const { maxOffset } = chartModel(entries, today, range, 0)
+  const offset = Math.min(chosenOffset, maxOffset)
+  const model = chartModel(entries, today, range, offset)
+  const points = chartPoints(entries)
+  const picked = points.find((p) => p.day === pickedDay)
+
+  // The window's length in days, and how many days it's shifted back from the current period.
+  const span = useSpring(length, ZOOM_RESPONSE)
+  const shift = useSpring(0, PAN_RESPONSE)
+  const { to: spanTo } = span
+  useEffect(() => spanTo(length), [length, spanTo])
+
+  // When a deleted Entry shortens the history, slide back onto the last period that still exists.
+  const { to: shiftTo, live: shiftLive } = shift
   useEffect(() => {
-    if (selected === undefined) return
-    const hide = (e: globalThis.PointerEvent) => {
-      if (!svg.current?.contains(e.target as Node)) setSelected(undefined)
-    }
-    document.addEventListener('pointerdown', hide)
-    return () => document.removeEventListener('pointerdown', hide)
-  }, [selected])
+    if (shiftLive.current.value > maxOffset * length) shiftTo(maxOffset * length)
+  }, [maxOffset, length, shiftLive, shiftTo])
 
-  // Centre the callout over its point, but keep it inside the chart's width so it stays on screen.
-  // Measured before paint, because the callout's width depends on its text.
-  useLayoutEffect(() => {
-    const box = callout.current
-    if (!box || selected === undefined || !svg.current) return
-    const chartWidth = svg.current.getBoundingClientRect().width
-    const pointX = (Number(box.dataset.x) / W) * chartWidth
-    const left = Math.min(Math.max(pointX - box.offsetWidth / 2, 0), chartWidth - box.offsetWidth)
-    box.style.left = `${left}px`
-  }, [selected])
+  const scale = useYScale(model, entries, today)
+  const { start, end } = windowAt(today, span.value, shift.value)
 
-  if (entries.length < 2) return null
+  useClearOnOutsideTouch(svg, pickedDay !== undefined, () => setPickedDay(undefined))
 
-  const byDay = new Map(entries.map((entry) => [entry.day, entry]))
-  const points = progress(entries).map((p) => ({ ...p, entry: byDay.get(p.day)! }))
+  // The finger's position when a pan started, in days shifted back.
+  const grabbedAt = useRef(0)
+  // The slide's speed when a touch caught it, so a tap lets it carry on rather than restart from rest.
+  const caughtVelocity = useRef(0)
+  const handlers = useChartGesture(svg, W, {
+    onDown: () => {
+      caughtVelocity.current = shift.live.current.velocity
+      shift.jump(shift.live.current.value)
+    },
+    onPanStart: () => {
+      grabbedAt.current = shift.live.current.value
+      setPickedDay(undefined)
+    },
+    onPan: (dx) => {
+      // Finger right = further back in time. Past today or the first Entry, it resists.
+      const days = grabbedAt.current + (dx / PLOT_W) * span.value
+      const max = maxOffset * length
+      if (days < 0) shift.jump(rubberband(days, length))
+      else if (days > max) shift.jump(max + rubberband(days - max, length))
+      else shift.jump(days)
+    },
+    onPanEnd: (velocity) => {
+      // Land where the flick was heading, at most one period away, then spring there at the finger's speed.
+      const daysPerSecond = (velocity / PLOT_W) * span.value
+      const landing = Math.round((shift.live.current.value + project(daysPerSecond)) / length)
+      const next = Math.max(0, Math.min(landing, offset + 1, maxOffset), offset - 1)
+      setOffset(next)
+      shift.to(next * length, daysPerSecond)
+    },
+    onSettle: () => shift.to(offset * length, caughtVelocity.current),
+    onPick: (clientX) => setPickedDay(nearest(points, clientX, svg.current!, { start, end })?.day),
+  })
 
-  const t0 = time(points[0].day)
-  const span = time(points.at(-1)!.day) - t0 || 1
-  const estimates = points.map((p) => p.estimated1RM)
-  const lowest = Math.min(...estimates)
-  const highest = Math.max(...estimates)
-  const yMargin = Math.max((highest - lowest) * Y_MARGIN, 1)
-  const x = (day: Day) => PAD.left + ((time(day) - t0) / span) * (W - PAD.left - PAD.right)
-  const y = (est: number) =>
-    PAD.top + (1 - (est - (lowest - yMargin)) / (highest - lowest + 2 * yMargin)) * (H - PAD.top - PAD.bottom)
-  const plotted = points.map((p) => ({ ...p, x: x(p.day), y: y(p.estimated1RM) }))
-  const first = plotted[0]
-  const last = plotted.at(-1)!
-
-  const baseline = H - PAD.bottom
-  const line = plotted.map((p) => `${p.x},${p.y}`).join(' ')
-  const area = `M${first.x},${baseline} ${plotted.map((p) => `L${p.x},${p.y}`).join(' ')} L${last.x},${baseline} Z`
-
-  // First, middle (the point nearest the middle in time) and last, each anchored so it stays inside the chart.
-  const midX = (first.x + last.x) / 2
-  const middle = plotted.reduce((a, b) => (Math.abs(b.x - midX) < Math.abs(a.x - midX) ? b : a))
-  const middleFits = middle.x - first.x >= MIN_LABEL_GAP && last.x - middle.x >= MIN_LABEL_GAP
-  const labels = [
-    { point: first, anchor: 'start' as const },
-    ...(middleFits ? [{ point: middle, anchor: 'middle' as const }] : []),
-    { point: last, anchor: 'end' as const },
-  ]
-
-  const selectedPoint = selected === undefined ? undefined : plotted[selected]
-
-  // The point nearest the finger, by x only.
-  const pick = (clientX: number) => {
-    const rect = svg.current!.getBoundingClientRect()
-    const fingerX = ((clientX - rect.left) / rect.width) * W
-    let nearest = 0
-    plotted.forEach((p, i) => {
-      if (Math.abs(p.x - fingerX) < Math.abs(plotted[nearest].x - fingerX)) nearest = i
-    })
-    setSelected(nearest)
-  }
-  const startScrub = (e: PointerEvent<SVGSVGElement>) => {
-    scrubbing.current = true
-    e.currentTarget.setPointerCapture(e.pointerId)
-    pick(e.clientX)
-  }
-  const scrub = (e: PointerEvent<SVGSVGElement>) => {
-    if (scrubbing.current) pick(e.clientX)
-  }
-  const endScrub = () => {
-    scrubbing.current = false
+  const pickRange = (next: Range) => {
+    rememberRange(next)
+    setRange(next)
+    setOffset(0)
+    setPickedDay(undefined)
+    shift.to(0)
   }
 
   return (
-    <div className="relative mt-4 px-5 pt-12">
-      <svg
-        ref={svg}
-        viewBox={`0 0 ${W} ${H}`}
+    <div className="mt-2 px-5">
+      <SegmentedControl segments={SEGMENTS} selected={range} onSelect={pickRange} label="Range" />
+      <ChartHeader model={model} picked={picked} today={today} />
+      <ChartPlot
+        svgRef={svg}
         role="img"
-        aria-label="Estimated 1RM over time"
-        className="w-full touch-pan-y text-tint select-none"
-        onPointerDown={startScrub}
-        onPointerMove={scrub}
-        onPointerUp={endScrub}
-        onPointerCancel={endScrub}
-      >
-        <defs>
-          <linearGradient id={fillId} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="currentColor" stopOpacity="0.22" />
-            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={area} fill={`url(#${fillId})`} />
-        <polyline points={line} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-        {selectedPoint && (
-          <line
-            x1={selectedPoint.x}
-            x2={selectedPoint.x}
-            y1={PAD.top - 8}
-            y2={baseline}
-            className="stroke-label-secondary/50"
-            strokeWidth={1}
-          />
-        )}
-        {plotted.map((p, i) => (
-          <circle
-            key={p.day}
-            cx={p.x}
-            cy={p.y}
-            r={i === selected ? 6 : 3}
-            fill="currentColor"
-            className={i === selected ? 'stroke-bg' : ''}
-            strokeWidth={2}
-          />
-        ))}
-        {labels.map(({ point, anchor }) => (
-          <text key={anchor} x={point.x} y={H - 6} textAnchor={anchor} className="fill-label-secondary text-footnote">
-            {dayLabel(point.day, today)}
-          </text>
-        ))}
-      </svg>
-      {selectedPoint && (
-        // Placed by the layout effect above. Scales in from its bottom edge, the side that points at the dot.
-        <div className="pointer-events-none absolute inset-x-5 top-0">
-          <div
-            ref={callout}
-            data-x={selectedPoint.x}
-            className="absolute top-0 flex origin-bottom items-baseline gap-2 rounded-control bg-surface-raised px-3 py-1.5 whitespace-nowrap tabular-nums shadow-md transition-[opacity,scale] duration-150 ease-out starting:opacity-0 motion-safe:starting:scale-95"
-          >
-            <span className="text-headline">
-              {formatEstimate(selectedPoint.estimated1RM)}
-              <Kg />
-            </span>
-            <span className="text-footnote text-label-secondary">
-              {formatWeight(selectedPoint.entry.weightKg)} × {selectedPoint.entry.reps} · {dayLabel(selectedPoint.day, today)}
-            </span>
-          </div>
-        </div>
-      )}
+        aria-label={summary(model, today)}
+        start={start}
+        end={end}
+        lo={scale.lo}
+        hi={scale.hi}
+        ticks={scale.ticks}
+        entries={points}
+        picked={picked}
+        {...handlers}
+      />
     </div>
   )
+}
+
+// The y-axis, springing to the destination period's scale. An empty period keeps the last scale.
+function useYScale(model: ChartModel, entries: readonly Entry[], today: Day) {
+  const [settled, setSettled] = useState(() => model.scale ?? chartModel(entries, today, 'All', 0).scale ?? EMPTY_SCALE)
+  if (model.scale && model.scale.ticks.join() !== settled.ticks.join()) setSettled(model.scale)
+  const lo = useSpring(settled.lo, SCALE_RESPONSE)
+  const hi = useSpring(settled.hi, SCALE_RESPONSE)
+  const { to: loTo } = lo
+  const { to: hiTo } = hi
+  useEffect(() => loTo(settled.lo), [settled.lo, loTo])
+  useEffect(() => hiTo(settled.hi), [settled.hi, hiTo])
+  return { lo: lo.value, hi: hi.value, ticks: settled.ticks }
+}
+
+// Any touch outside the chart clears the picked Entry.
+function useClearOnOutsideTouch(svg: RefObject<SVGSVGElement | null>, active: boolean, clear: () => void) {
+  const latest = useRef(clear)
+  useEffect(() => {
+    latest.current = clear
+  })
+  useEffect(() => {
+    if (!active) return
+    const onDown = (e: PointerEvent) => {
+      if (!svg.current?.contains(e.target as Node)) latest.current()
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [svg, active])
+}
+
+// The Entry in the window nearest a screen x, by x only.
+function nearest(points: readonly ChartPoint[], clientX: number, svg: SVGSVGElement, window: { start: number; end: number }) {
+  const rect = svg.getBoundingClientRect()
+  const fingerX = ((clientX - rect.left) / rect.width) * W
+  const distance = (p: ChartPoint) => Math.abs(plotX(p.dayNumber, window) - fingerX)
+  return points
+    .filter((p) => p.dayNumber > window.start && p.dayNumber <= window.end)
+    .reduce<ChartPoint | undefined>((a, b) => (!a || distance(b) < distance(a) ? b : a), undefined)
+}
+
+// "24 May – Today"
+const dates = (model: ChartModel, today: Day) => `${dayLabel(model.headerStart, today)} – ${dayLabel(model.headerEnd, today)}`
+
+// Three fixed lines above the plot. At rest: Best, the highest Estimated 1RM, and the dates with the change.
+// While an Entry is picked: weight × reps, its Estimated 1RM, its day. The chart's label says the same to VoiceOver.
+function ChartHeader({ model, picked, today }: { model: ChartModel; picked: ChartPoint | undefined; today: Day }) {
+  const value = picked?.estimated1RM ?? model.best
+  const change = model.change === undefined ? '' : `, ${formatChange(model.change).text} kg`
+  return (
+    <div aria-hidden className="mt-4 tabular-nums whitespace-nowrap">
+      <p className="text-footnote text-label-secondary">{picked ? `${formatWeight(picked.weightKg)} × ${picked.reps}` : 'Best'}</p>
+      <p className="text-large-title">
+        {value === undefined ? '–' : formatEstimate(value)}
+        {value !== undefined && <Kg />}
+      </p>
+      <p className="truncate text-footnote text-label-secondary">
+        {picked ? dayLabel(picked.day, today) : `${dates(model, today)}${change}`}
+      </p>
+    </div>
+  )
+}
+
+// What VoiceOver reads for the chart: "Best 120.3 kg, 24 May to today, up 11.7 kg".
+function summary(model: ChartModel, today: Day) {
+  const lower = (label: string) => (label === 'Today' ? 'today' : label)
+  const period = `${lower(dayLabel(model.headerStart, today))} to ${lower(dayLabel(model.headerEnd, today))}`
+  if (model.best === undefined) return `No entries, ${period}`
+  const best = `Best ${formatEstimate(model.best)} kg, ${period}`
+  if (model.change === undefined) return best
+  const rounded = Math.round(model.change * 10) / 10
+  if (rounded === 0) return `${best}, no change`
+  return `${best}, ${rounded > 0 ? 'up' : 'down'} ${Math.abs(rounded).toFixed(1)} kg`
 }
