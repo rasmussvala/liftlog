@@ -18,6 +18,7 @@ const VARIANTS = [
   { key: 'A', label: 'Grouped list' },
   { key: 'B', label: 'Status card' },
   { key: 'C', label: 'Two tiles' },
+  { key: 'D', label: 'List + reason' },
 ]
 
 function agoText(lastBackup: number): string {
@@ -84,6 +85,33 @@ function VariantB({ lastBackup, imported, onExport, onImport }: Props) {
         </button>
         {imported && <p className="mt-1 text-center text-footnote text-label-secondary">{imported}</p>}
       </div>
+    </section>
+  )
+}
+
+// A's grouped list, with the date as the Export row's value (iOS Settings style) and B's reason as the footer.
+function VariantD({ lastBackup, imported, onExport, onImport }: Props) {
+  const row = 'flex min-h-14 w-full items-center gap-3 px-5 text-left text-body active:bg-surface-raised'
+  return (
+    <section className="mt-6 px-5" aria-label="Backup">
+      <h2 className="px-1 text-headline">Backup</h2>
+      <div className="mt-2 overflow-hidden rounded-card bg-surface">
+        <button onClick={onExport} className={row}>
+          <Share size={24} strokeWidth={1.75} className="text-tint" aria-hidden />
+          <span className="flex-1 text-tint">Export backup</span>
+          <span className="text-subhead text-label-secondary">
+            {lastBackup === null ? 'Never' : agoText(lastBackup).replace(/^./, (c) => c.toUpperCase())}
+          </span>
+        </button>
+        <div className="ml-14 border-t border-separator" />
+        <button onClick={onImport} className={`${row} text-tint`}>
+          <FileDown size={24} strokeWidth={1.75} aria-hidden />
+          Import backup
+        </button>
+      </div>
+      <p className="mt-2 px-1 text-footnote text-label-secondary">
+        {imported ?? 'Your lifts live only on this phone. Export a Backup to keep a copy in Files or iCloud Drive.'}
+      </p>
     </section>
   )
 }
@@ -190,6 +218,7 @@ export function BackupSectionPrototype() {
       {variant === 'A' && <VariantA {...props} />}
       {variant === 'B' && <VariantB {...props} />}
       {variant === 'C' && <VariantC {...props} />}
+      {variant === 'D' && <VariantD {...props} />}
       {dialog && <PrototypeDialog kind={dialog} onClose={close} />}
       <PrototypeSwitcher
         variants={VARIANTS}
