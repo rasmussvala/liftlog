@@ -61,7 +61,7 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
                 {tab === 'history' ? (
                   // One grid for every row, so the columns line up: weight, × reps, spacer, estimated 1RM, day.
                   // Room at the end so the floating + never covers the last row.
-                  <ul role="tabpanel" className="mt-6 mb-20 ml-5 grid grid-cols-[auto_auto_1fr_auto_auto] tabular-nums">
+                  <ul role="tabpanel" className="mt-6 mb-20 grid grid-cols-[auto_auto_1fr_auto_auto] tabular-nums">
                     {found.entries.map((item) => (
                       <HistoryRow
                         key={item.entry.id}
@@ -113,14 +113,15 @@ interface HistoryRowProps {
 function HistoryRow({ item: { entry, estimated1RM }, today, lit, onOpen }: HistoryRowProps) {
   return (
     // Lit up (just saved): tint at once, then fades back once it's no longer lit.
+    // The tint spans the full width; the separator stays inset on the left.
     <li
-      className={`col-span-full grid grid-cols-subgrid border-b border-separator transition-colors ease-out last:border-b-0 ${lit ? 'bg-tint/15 duration-0' : 'duration-700'}`}
+      className={`relative col-span-full grid grid-cols-subgrid transition-colors ease-out after:absolute after:right-0 after:bottom-0 after:left-5 after:h-px after:bg-separator last:after:hidden ${lit ? 'bg-tint/15 duration-0' : 'duration-700'}`}
     >
       <button
         onClick={onOpen}
         className="col-span-full grid min-h-11 grid-cols-subgrid items-baseline py-3 text-left transition-opacity duration-150 ease-out active:opacity-70 active:duration-0"
       >
-        <span className="text-right text-body">
+        <span className="pl-5 text-right text-body">
           {formatWeight(entry.weightKg)}
           <Kg />
         </span>
