@@ -68,7 +68,7 @@ function VariantB({ lastBackup, imported, onExport, onImport }: Props) {
         <p className="text-footnote text-label-secondary">Backup</p>
         <p className="mt-1 text-title">{lastBackup === null ? 'No backup yet' : `Last one ${agoText(lastBackup)}`}</p>
         <p className="mt-2 text-subhead text-label-secondary">
-          Your lifts live only on this phone. Export a Backup to keep a copy in Files or iCloud Drive.
+          Your lifts live only on this phone. Export a Backup to keep a copy somewhere safe.
         </p>
         <button
           onClick={onExport}
@@ -110,7 +110,7 @@ function VariantD({ lastBackup, imported, onExport, onImport }: Props) {
         </button>
       </div>
       <p className="mt-2 px-1 text-footnote text-label-secondary">
-        {imported ?? 'Your lifts live only on this phone. Export a Backup to keep a copy in Files or iCloud Drive.'}
+        {imported ?? 'Your lifts live only on this phone. Export a Backup to keep a copy somewhere safe.'}
       </p>
     </section>
   )
@@ -155,8 +155,8 @@ function VariantC({ lastBackup, imported, onExport, onImport }: Props) {
 
 const DIALOGS = {
   export: {
-    text: 'Pretend share sheet. In the app, iOS shows its own share sheet here.',
-    ok: 'Saved to Files',
+    text: 'Pretend share sheet. In the app, your phone shows its own share sheet here.',
+    ok: 'Saved',
     cancel: 'Cancel share',
   },
   import: {
