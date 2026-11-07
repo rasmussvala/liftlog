@@ -18,15 +18,15 @@ export function dayLabel(day: Day, today: Day): string {
   return `${date} ${MONTHS[month - 1]}${yearSuffix}`
 }
 
-// How long ago a day was, for the Export backup row: "Today", "Yesterday", "4 days ago", "3 weeks ago",
-// "5 months ago", "2 years ago".
+// How long ago a day was: "Today", "Yesterday", "4 days ago", "3 weeks ago", "5 months ago", "2 years ago".
 export function agoLabel(day: Day, today: Day): string {
-  const days = Math.round(dayNumber(today) - dayNumber(day))
+  const days = dayNumber(today) - dayNumber(day)
   if (days <= 0) return 'Today'
   if (days === 1) return 'Yesterday'
   if (days < 14) return `${days} days ago`
   if (days < 60) return `${Math.floor(days / 7)} weeks ago`
-  if (days < 365) return `${Math.floor(days / 30)} months ago`
+  // Capped at 11, so 360 days reads "11 months ago" rather than "12 months ago".
+  if (days < 365) return `${Math.min(11, Math.floor(days / 30))} months ago`
   const years = Math.floor(days / 365)
   return years === 1 ? '1 year ago' : `${years} years ago`
 }

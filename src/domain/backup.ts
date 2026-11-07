@@ -14,12 +14,13 @@ export interface BackupData {
   exercises: { name: string; entries: Pick<Entry, 'day' | 'weightKg' | 'reps'>[] }[]
 }
 
-// Turns the user's exercises, each with its entries, into a Backup. Give them in the user's order.
-export function buildBackup(logbook: { exercise: Exercise; entries: Entry[] }[], exportedAt: Date): BackupData {
+// Turns the user's exercises, each with all its entries, into a Backup. Give the exercises in the
+// user's order and the entries oldest first, as the store lists them: the Backup keeps both orders.
+export function buildBackup(exercises: { exercise: Exercise; entries: Entry[] }[], exportedAt: Date): BackupData {
   return {
     version: BACKUP_VERSION,
     exportedAt: exportedAt.toISOString(),
-    exercises: logbook.map(({ exercise, entries }) => ({
+    exercises: exercises.map(({ exercise, entries }) => ({
       name: exercise.name,
       entries: entries.map(({ day, weightKg, reps }) => ({ day, weightKg, reps })),
     })),

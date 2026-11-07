@@ -13,7 +13,7 @@ export function SettingsScreen({ store, slideIn }: { store: LogbookStore; slideI
   return (
     <PushedScreen title="Settings" slideIn={slideIn}>
       <BackupSection store={store} />
-      <Group title="About" label="App version">
+      <Group title="About">
         <ValueRow name="Version" value={__APP_VERSION__} />
         <div className="ml-5 border-t border-separator" />
         <ValueRow name="Build" value={__APP_COMMIT__} />
@@ -63,9 +63,9 @@ function BackupSection({ store }: { store: LogbookStore }) {
 }
 
 // A titled card of rows, with optional small print under it.
-function Group({ title, label, footer, children }: { title: string; label?: string; footer?: string; children: ReactNode }) {
+function Group({ title, footer, children }: { title: string; footer?: string; children: ReactNode }) {
   return (
-    <section className="mt-6 px-5" aria-label={label ?? title}>
+    <section className="mt-6 px-5" aria-label={title}>
       <h2 className="px-1 text-headline">{title}</h2>
       <div className="mt-2 overflow-hidden rounded-card bg-surface">{children}</div>
       {footer && <p className="mt-2 px-1 text-footnote text-label-secondary">{footer}</p>}

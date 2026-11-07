@@ -4,8 +4,8 @@ import type { LogbookStore } from './logbookStore'
 // Every exercise in the user's order, each with its entries. The caller passes the export time.
 export async function exportBackup(store: LogbookStore, exportedAt: Date): Promise<BackupData> {
   const exercises = await store.listExercises()
-  const logbook = await Promise.all(
+  const withEntries = await Promise.all(
     exercises.map(async (exercise) => ({ exercise, entries: await store.listEntries(exercise.id) })),
   )
-  return buildBackup(logbook, exportedAt)
+  return buildBackup(withEntries, exportedAt)
 }
