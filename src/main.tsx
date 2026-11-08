@@ -6,7 +6,7 @@ import { createDexieLogbookStore } from './adapters/dexie/dexieLogbookStore'
 import { putHomeUnderScreen } from './adapters/ui/router'
 
 // Composition root: create the store and hand it to the UI.
-const store = createDexieLogbookStore()
+const store = createDexieLogbookStore(__DATA_NAMESPACE__)
 putHomeUnderScreen()
 
 // Ask the browser to keep the logbook, so the phone is less likely to clear it (ADR 0002).

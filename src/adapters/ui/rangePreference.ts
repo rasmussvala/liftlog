@@ -2,7 +2,7 @@
 // A viewer convenience, not logbook data, so it lives in browser storage and stays out of Backups.
 import { RANGES, type Range } from '../../domain/progressChart'
 
-const KEY = 'liftlog.chartRange'
+const KEY = `${__DATA_NAMESPACE__}.chartRange`
 
 // Undefined when nothing is remembered or storage is unavailable.
 export function rememberedRange(): Range | undefined {
