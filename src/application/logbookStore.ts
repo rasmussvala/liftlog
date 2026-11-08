@@ -1,3 +1,4 @@
+import type { BackupExercise } from '../domain/backup'
 import type { Entry } from '../domain/entry'
 import type { Exercise } from '../domain/exercise'
 
@@ -23,4 +24,8 @@ export interface LogbookStore {
   updateEntry(id: number, values: Pick<Entry, 'weightKg' | 'reps'>): Promise<void>
   // Removes an entry. An unknown id does nothing.
   deleteEntry(id: number): Promise<void>
+  // Replaces every exercise and entry with these, in one transaction: if anything fails, the old data
+  // stays. Exercises get new ids and positions in the order given, and their entries link to the new
+  // ids. Starter exercises are never added. Takes the exercises as given: the caller checks them.
+  replaceAll(exercises: BackupExercise[]): Promise<void>
 }

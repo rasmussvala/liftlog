@@ -1,5 +1,6 @@
 // Display formatting for screens. Today's date comes from the local clock here, never from domain/.
 import type { Day, RepsProblem, WeightProblem } from '../../domain/entry'
+import { dayNumber } from '../../domain/progressChart'
 
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -15,6 +16,29 @@ export function dayLabel(day: Day, today: Day): string {
   const [year, month, date] = day.split('-').map(Number)
   const yearSuffix = day.slice(0, 4) === today.slice(0, 4) ? '' : ` ${year}`
   return `${date} ${MONTHS[month - 1]}${yearSuffix}`
+}
+
+// A moment's local date with the year: "3 Nov 2026".
+export function dateLabel(date: Date): string {
+  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+}
+
+// "1 exercise", "6 exercises", "0 entries".
+export function countLabel(count: number, one: string, many = `${one}s`): string {
+  return `${count} ${count === 1 ? one : many}`
+}
+
+// How long ago a day was: "Today", "Yesterday", "4 days ago", "3 weeks ago", "5 months ago", "2 years ago".
+export function agoLabel(day: Day, today: Day): string {
+  const days = dayNumber(today) - dayNumber(day)
+  if (days <= 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 14) return `${days} days ago`
+  if (days < 60) return `${Math.floor(days / 7)} weeks ago`
+  // Capped at 11, so 360 days reads "11 months ago" rather than "12 months ago".
+  if (days < 365) return `${Math.min(11, Math.floor(days / 30))} months ago`
+  const years = Math.floor(days / 365)
+  return years === 1 ? '1 year ago' : `${years} years ago`
 }
 
 // Weights drop trailing zeros: 122.5, 100.

@@ -1,0 +1,52 @@
+# A preview of a PR at https://rasmussvala.github.io/liftlog/pr-preview/pr-<number>/, on request.
+# Add the `preview` label to a PR to build it. New pushes update it while the label is on.
+# Removing the label, or closing the PR, deletes it.
+# Previews keep their own data (LIFTLOG_PREVIEW in vite.config.ts), so they never touch the real logbook.
+name: PR preview
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# One write to gh-pages at a time, shared with deploy.yml.
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    # Only PRs with the label, plus the moment the label comes off.
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'preview') ||
+      (github.event.action == 'unlabeled' && github.event.label.name == 'preview')
+    runs-on: ubuntu-latest
+    env:
+      REMOVE: ${{ github.event.action == 'closed' || github.event.action == 'unlabeled' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Node
+        if: env.REMOVE == 'false'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        if: env.REMOVE == 'false'
+        run: npm ci
+      - name: Build
+        if: env.REMOVE == 'false'
+        run: npm run build -- --base /liftlog/pr-preview/pr-${{ github.event.number }}/
+        env:
+          LIFTLOG_PREVIEW: '1'
+      - name: Publish or remove the preview
+        uses: rossjrw/pr-preview-action@873417d2df72380da1f3978378fb58560bcde976 # v1.8.2
+        with:
+          source-dir: dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: ${{ env.REMOVE == 'true' && 'remove' || 'deploy' }}
