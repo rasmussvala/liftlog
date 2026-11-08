@@ -1,6 +1,6 @@
 // When the user last exported a Backup on this device. It describes the device, not the logbook,
 // so it lives in browser storage and stays out of Backups.
-const KEY = 'liftlog.lastBackupAt'
+const KEY = `${__DATA_NAMESPACE__}.lastBackupAt`
 
 // Undefined before the first export, or when storage is unavailable.
 export function lastBackupAt(): Date | undefined {
