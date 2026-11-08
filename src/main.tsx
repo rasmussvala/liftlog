@@ -9,6 +9,10 @@ import { putHomeUnderScreen } from './adapters/ui/router'
 const store = createDexieLogbookStore(__DATA_NAMESPACE__)
 putHomeUnderScreen()
 
+// Ask the browser to keep the logbook, so the phone is less likely to clear it (ADR 0002).
+// The answer doesn't change anything here, and older browsers don't have it.
+navigator.storage?.persist?.().catch(() => {})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App store={store} />
