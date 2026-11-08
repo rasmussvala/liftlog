@@ -9,3 +9,9 @@ export async function exportBackup(store: LogbookStore, exportedAt: Date): Promi
   )
   return buildBackup(withEntries, exportedAt)
 }
+
+// Replaces all the user's exercises and entries with a Backup's, in one step. Give it a Backup that
+// parseBackup has checked: it doesn't check again.
+export function importBackup(store: LogbookStore, backup: BackupData): Promise<void> {
+  return store.replaceAll(backup.exercises)
+}

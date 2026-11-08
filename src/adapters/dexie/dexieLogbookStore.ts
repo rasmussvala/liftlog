@@ -95,5 +95,20 @@ export function createDexieLogbookStore(name = 'liftlog'): LogbookStore {
       await db.entries.update(id, { weightKg, reps })
     },
     deleteEntry: (id) => db.entries.delete(id),
+    replaceAll: async (exercises) => {
+      await db.transaction('rw', db.exercises, db.entries, async () => {
+        await db.entries.clear()
+        await db.exercises.clear()
+        const ids = await db.exercises.bulkAdd(
+          exercises.map(({ name }, position) => ({ name, position }) as Exercise),
+          { allKeys: true },
+        )
+        await db.entries.bulkAdd(
+          exercises.flatMap(({ entries }, index) =>
+            entries.map((entry) => ({ ...entry, exerciseId: ids[index] }) as Entry),
+          ),
+        )
+      })
+    },
   }
 }

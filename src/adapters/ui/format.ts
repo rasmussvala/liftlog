@@ -18,6 +18,16 @@ export function dayLabel(day: Day, today: Day): string {
   return `${date} ${MONTHS[month - 1]}${yearSuffix}`
 }
 
+// A moment's local date with the year: "3 Nov 2026".
+export function dateLabel(date: Date): string {
+  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+}
+
+// "1 exercise", "6 exercises", "0 entries".
+export function countLabel(count: number, one: string, many = `${one}s`): string {
+  return `${count} ${count === 1 ? one : many}`
+}
+
 // How long ago a day was: "Today", "Yesterday", "4 days ago", "3 weeks ago", "5 months ago", "2 years ago".
 export function agoLabel(day: Day, today: Day): string {
   const days = dayNumber(today) - dayNumber(day)
