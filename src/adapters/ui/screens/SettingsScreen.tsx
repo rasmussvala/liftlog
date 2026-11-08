@@ -3,6 +3,8 @@ import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { exportBackup, importBackup } from '../../../application/backup'
 import type { LogbookStore } from '../../../application/logbookStore'
 import { backupFileName, parseBackup, serializeBackup, type BackupProblem } from '../../../domain/backup'
+import { MAX_REPS, MIN_REPS, WEIGHT_LIMIT_KG } from '../../../domain/entry'
+import { MAX_EXERCISE_NAME } from '../../../domain/exercise'
 import { shareOrDownload } from '../backupFile'
 import { agoLabel, countLabel, dateLabel, localToday } from '../format'
 import { lastBackupAt, rememberBackup } from '../lastBackup'
@@ -54,16 +56,16 @@ function BackupSection({ store }: { store: LogbookStore }) {
     if (!file) return
     setImporting(true)
     try {
-      const read = parseBackup(await file.text())
-      if (read.problem) return window.alert(PROBLEMS[read.problem])
-      const exercises = countLabel(read.exerciseCount, 'exercise')
-      const entries = countLabel(read.entryCount, 'entry', 'entries')
+      const parsed = parseBackup(await file.text())
+      if (parsed.problem) return window.alert(PROBLEMS[parsed.problem])
+      const exercises = countLabel(parsed.exerciseCount, 'exercise')
+      const entries = countLabel(parsed.entryCount, 'entry', 'entries')
       const ok = window.confirm(
-        `Backup from ${dateLabel(read.exportedAt)}: ${exercises}, ${entries}. ` +
+        `Backup from ${dateLabel(parsed.exportedAt)}: ${exercises}, ${entries}. ` +
           `This replaces all your current exercises and entries and can't be undone.`,
       )
       if (!ok) return
-      await importBackup(store, read.backup)
+      await importBackup(store, parsed.backup)
       setImported(`Imported ${exercises} and ${entries}`)
     } catch {
       window.alert("Couldn't import this Backup. Your exercises and entries haven't changed.")
@@ -110,10 +112,10 @@ const PROBLEMS: Record<BackupProblem, string> = {
   'not-a-backup': "This file isn't a liftlog Backup.",
   'newer-version': 'This Backup was made by a newer version of liftlog. Update the app, then import it again.',
   'blank-name': "This Backup can't be imported: an exercise has no name.",
-  'name-too-long': "This Backup can't be imported: an exercise name is longer than 40 characters.",
+  'name-too-long': `This Backup can't be imported: an exercise name is longer than ${MAX_EXERCISE_NAME} characters.`,
   'duplicate-name': "This Backup can't be imported: two exercises have the same name.",
-  'bad-weight': "This Backup can't be imported: an entry's weight isn't over 0 and under 1000 kg, with at most 2 decimals.",
-  'bad-reps': "This Backup can't be imported: an entry's reps aren't a whole number from 1 to 12.",
+  'bad-weight': `This Backup can't be imported: an entry's weight isn't over 0 and under ${WEIGHT_LIMIT_KG} kg, with at most 2 decimals.`,
+  'bad-reps': `This Backup can't be imported: an entry's reps aren't a whole number from ${MIN_REPS} to ${MAX_REPS}.`,
   'bad-day': "This Backup can't be imported: an entry's day isn't a valid date.",
   'duplicate-day': "This Backup can't be imported: an exercise has two entries on the same day.",
 }
