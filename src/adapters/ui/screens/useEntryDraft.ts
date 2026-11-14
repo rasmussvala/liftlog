@@ -24,12 +24,16 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
   const weight = draft.weight ?? (editing ? formatWeight(editing.weightKg) : '')
   const reps = draft.reps ?? (editing ? String(editing.reps) : '')
   const check = validateEntry(weight, reps)
-  const valid = check.weightKg !== undefined && check.reps !== undefined
 
   // Where the steppers start without a valid typed value: the saved values when editing, else the latest entry.
   // The latest entry shows as grey placeholders (0 and 0 for a first entry), but not while editing.
   const latest = editing ? undefined : entries[0]
   const stepFrom = editing ?? latest
+  // Untouched placeholders are valid defaults when there is a previous entry. A cleared or invalid typed
+  // field stays invalid instead of silently falling back to the placeholder.
+  const weightKg = draft.weight === undefined ? stepFrom?.weightKg : check.weightKg
+  const repsValue = draft.reps === undefined ? stepFrom?.reps : check.reps
+  const valid = weightKg !== undefined && repsValue !== undefined
   const weightBase = check.weightKg ?? stepFrom?.weightKg ?? 0
   const repsBase = check.reps ?? stepFrom?.reps ?? 0
 
@@ -44,14 +48,10 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
     editing,
     weight,
     reps,
-    placeholder: editing
-      ? undefined
-      : latest
-        ? { weight: formatWeight(latest.weightKg), reps: String(latest.reps) }
-        : { weight: '0', reps: '0' },
-    // Both values, once both are valid.
-    values: valid ? { weightKg: check.weightKg!, reps: check.reps! } : undefined,
-    estimated1RM: valid ? estimate1RM(check.weightKg!, check.reps!) : undefined,
+    placeholder: placeholderFor(editing, latest),
+    // Typed values plus untouched defaults; placeholders stay grey but can be saved.
+    values: valid ? { weightKg: weightKg!, reps: repsValue! } : undefined,
+    estimated1RM: valid ? estimate1RM(weightKg!, repsValue!) : undefined,
     weightWarning,
     repsWarning,
     setWeight,
@@ -70,6 +70,13 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
     pickDay: (day: Day) =>
       setDraft((d) => (entries.some((entry) => entry.day === day) ? { day, left: d.left } : { ...d, day })),
   }
+}
+
+function placeholderFor(editing: Entry | undefined, latest: Entry | undefined) {
+  if (editing) return undefined
+  return latest
+    ? { weight: formatWeight(latest.weightKg), reps: String(latest.reps) }
+    : { weight: '0', reps: '0' }
 }
 
 export type EntryDraft = ReturnType<typeof useEntryDraft>
