@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { deleteEntry, saveEntry } from '../../../application/entries'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day, Entry } from '../../../domain/entry'
+import type { WeightStepKg } from '../../../domain/weightStep'
 import { CoverPage } from '../CoverPage'
 import { dayLabel, formatEstimate } from '../format'
 import { Kg } from '../Kg'
@@ -19,18 +20,19 @@ interface EntryPageProps {
   // Opened from a history row: no day row, so editing never moves an entry to another day.
   dayLocked: boolean
   today: Day
+  weightStepKg: WeightStepKg
   // The page has left the screen, after a save (with the saved day), a delete or a cancel.
   onClosed: (savedDay: Day | undefined) => void
 }
 
 // Log an entry for any past day, edit the one a picked day already has, or delete it.
-export function EntryPage({ store, exerciseId, entries, startDay, dayLocked, today, onClosed }: EntryPageProps) {
+export function EntryPage({ store, exerciseId, entries, startDay, dayLocked, today, weightStepKg, onClosed }: EntryPageProps) {
   // The entries as they were when a save or delete started: set while it runs, then kept by the exit.
   // So the page doesn't change (title, values, Delete) as the store updates under it.
   const [frozen, setFrozen] = useState<readonly Entry[]>()
   // Set once Save, Delete or Cancel starts the exit. Undefined while the page is open.
   const [exit, setExit] = useState<{ savedDay?: Day; entries: readonly Entry[] }>()
-  const form = useEntryDraft(exit?.entries ?? frozen ?? entries, startDay)
+  const form = useEntryDraft(exit?.entries ?? frozen ?? entries, startDay, weightStepKg)
   const title = form.editing ? `Edit ${dayLabel(form.day, today)}` : 'New entry'
   const busy = frozen !== undefined && !exit
 

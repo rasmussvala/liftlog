@@ -55,6 +55,7 @@ Spacing uses Tailwind's default 4px scale (`p-5` = 20px). Pages use `px-5` and c
 |---|---|---|
 | `animate-screen-in` | Slide in from the right, 340ms, `ease-drawer` | A screen opening on top of Home |
 | `animate-fade-in` | Fade in, 200ms, ease-out | The reduced-motion stand-in for `animate-screen-in` |
+| `animate-reset-appear` | Fade and scale in, 180ms, ease-out | A small contextual action appearing after a choice changes |
 | `ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | Drawers and screens sliding in |
 
 Pair them: `motion-safe:animate-screen-in motion-reduce:animate-fade-in`.

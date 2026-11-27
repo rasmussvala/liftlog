@@ -4,6 +4,7 @@ import { exerciseLog, type LogEntry } from '../../../application/entries'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day, Entry } from '../../../domain/entry'
 import { estimate1RM, targets } from '../../../domain/progress'
+import type { WeightStepKg } from '../../../domain/weightStep'
 import { FloatingPlus } from '../FloatingPlus'
 import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from '../format'
 import { Kg } from '../Kg'
@@ -20,7 +21,17 @@ const TABS = [
 ] as const
 
 // One exercise: its progress chart, then History (newest first) or Targets, and a floating + for Log entry.
-export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id: number; slideIn: boolean }) {
+export function ExerciseScreen({
+  store,
+  id,
+  slideIn,
+  weightStepKg,
+}: {
+  store: LogbookStore
+  id: number
+  slideIn: boolean
+  weightStepKg: WeightStepKg
+}) {
   const log = useLiveQuery(() => exerciseLog(store, id), [store, id])
   const today = localToday()
   // How the entry page opened, while it's open: Log entry starts on today, a history row locks its day.
@@ -71,7 +82,7 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
                     ))}
                   </ul>
                 ) : (
-                  <TargetsList entries={entries} />
+                  <TargetsList entries={entries} weightStepKg={weightStepKg} />
                 )}
               </>
             )}
@@ -88,6 +99,7 @@ export function ExerciseScreen({ store, id, slideIn }: { store: LogbookStore; id
           startDay={entryPage.day}
           dayLocked={entryPage.dayLocked}
           today={today}
+          weightStepKg={weightStepKg}
           onClosed={(savedDay) => {
             setEntryPage(undefined)
             setFlash(savedDay)
@@ -136,8 +148,8 @@ function HistoryRow({ item: { entry, estimated1RM }, today, lit, onOpen }: Histo
 }
 
 // One row per rep count; the gain is relative to the latest estimated 1RM.
-function TargetsList({ entries }: { entries: readonly Entry[] }) {
-  const table = targets(entries)
+function TargetsList({ entries, weightStepKg }: { entries: readonly Entry[]; weightStepKg: WeightStepKg }) {
+  const table = targets(entries, weightStepKg)
   if (!table) return null
   return (
     <div role="tabpanel">
