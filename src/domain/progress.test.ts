@@ -85,6 +85,12 @@ describe('targets', () => {
     expect(ten?.weightKg).toBe(77.5)
   })
 
+  it('moves a target up when floating-point rounding makes an equal estimate look higher', () => {
+    // 90 × 12 and 105 × 6 both estimate to 126 kg, so the six-rep target must be 107.5 kg.
+    const six = targets([entry('2026-10-01', 90, 12)])?.targets.find((t) => t.reps === 6)
+    expect(six?.weightKg).toBe(107.5)
+  })
+
   it('gives the next step above beat for 1 rep, since a single rep is its own 1RM', () => {
     expect(targets([entry('2026-10-01', 101, 1)])?.targets[0]).toEqual({ reps: 1, weightKg: 102.5 })
     expect(targets([entry('2026-10-01', 100, 1)])?.targets[0]).toEqual({ reps: 1, weightKg: 102.5 })
