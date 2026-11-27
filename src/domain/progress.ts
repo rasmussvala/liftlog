@@ -1,4 +1,5 @@
 import { MAX_REPS, MIN_REPS, type Day, type Entry } from './entry'
+import { DEFAULT_WEIGHT_STEP_KG, type WeightStepKg } from './weightStep'
 
 // Estimated one-rep max (kg) with the Epley formula: w × (1 + reps / 30).
 // A single rep is already a 1RM, so it is returned as is.
@@ -37,10 +38,7 @@ export function progress(entries: readonly Entry[]): ProgressPoint[] {
     .map((entry) => ({ day: entry.day, estimated1RM: estimate1RM(entry.weightKg, entry.reps) }))
 }
 
-// Targets are rounded to this step, so they can be loaded with standard plates.
-export const TARGET_STEP_KG = 2.5
-
-// The lightest weight, in TARGET_STEP_KG steps, that at these reps gives an estimated 1RM above the current one.
+// The lightest weight, in the selected Weight step, that at these reps gives an estimated 1RM above the current one.
 export interface Target {
   reps: number
   weightKg: number
@@ -54,7 +52,7 @@ export interface Targets {
 }
 
 // What to lift next, from the latest entry. Undefined with no entries. Entries may come in any order.
-export function targets(entries: readonly Entry[]): Targets | undefined {
+export function targets(entries: readonly Entry[], weightStepKg: WeightStepKg = DEFAULT_WEIGHT_STEP_KG): Targets | undefined {
   const current = currentEstimate(entries)
   if (!current) return undefined
   const beat = current.estimated1RM
@@ -63,13 +61,13 @@ export function targets(entries: readonly Entry[]): Targets | undefined {
   const latestWeightHundredths = Math.round(current.latest.weightKg * 100)
   const latestMultiplier = current.latest.reps === 1 ? 30 : 30 + current.latest.reps
   const beatNumerator = latestWeightHundredths * latestMultiplier
-  const targetStepHundredths = TARGET_STEP_KG * 100
+  const targetStepHundredths = weightStepKg * 100
   const rows: Target[] = []
   for (let reps = MIN_REPS; reps <= MAX_REPS; reps++) {
     const multiplier = reps === 1 ? 30 : 30 + reps
     const stepNumerator = targetStepHundredths * multiplier
     const steps = Math.floor(beatNumerator / stepNumerator) + 1
-    const weightKg = steps * TARGET_STEP_KG
+    const weightKg = (steps * targetStepHundredths) / 100
     rows.push({ reps, weightKg })
   }
   return { beat, targets: rows }

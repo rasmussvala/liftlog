@@ -20,8 +20,11 @@ The heaviest single rep the user could likely lift, worked out from an entry wit
 _Avoid_: Max, PR, one-rep max (on its own)
 
 **Target**:
-The lightest weight, in 2.5 kg steps, that at a given number of reps would give an Estimated 1RM above the current one: the latest entry's, not the all-time best. The exercise screen shows one for every rep count from 1 to 12.
+The lightest weight, in the selected Weight step, that at a given number of reps would give an Estimated 1RM above the current one: the latest entry's, not the all-time best. The exercise screen shows one for every rep count from 1 to 12.
 _Avoid_: Goal, suggestion
+
+**Weight step**:
+The amount added or subtracted by the entry page's weight buttons and used to round Targets. It is chosen per device and defaults to 2.5 kg.
 
 **Range**:
 The span of time the progress chart shows: M, 6M, Y or All. Each is a rolling window ending today, so 6M is always the last 6 months. All fits every entry.

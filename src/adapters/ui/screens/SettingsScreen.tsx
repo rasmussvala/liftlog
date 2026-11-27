@@ -1,19 +1,31 @@
-import { Download, Share } from 'lucide-react'
+import { Check, Download, RotateCcw, Share } from 'lucide-react'
 import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { exportBackup, importBackup } from '../../../application/backup'
 import type { LogbookStore } from '../../../application/logbookStore'
 import { backupFileName, parseBackup, serializeBackup, type BackupProblem } from '../../../domain/backup'
 import { MAX_REPS, MIN_REPS, WEIGHT_LIMIT_KG } from '../../../domain/entry'
 import { MAX_EXERCISE_NAME } from '../../../domain/exercise'
+import { DEFAULT_WEIGHT_STEP_KG, WEIGHT_STEPS_KG, type WeightStepKg } from '../../../domain/weightStep'
 import { shareOrDownload } from '../backupFile'
 import { agoLabel, countLabel, dateLabel, localToday } from '../format'
 import { lastBackupAt, rememberBackup } from '../lastBackup'
 import { PushedScreen } from '../PushedScreen'
 
 // Grouped lists, like the phone's own Settings: a Backup card, then About.
-export function SettingsScreen({ store, slideIn }: { store: LogbookStore; slideIn: boolean }) {
+export function SettingsScreen({
+  store,
+  slideIn,
+  weightStepKg,
+  onWeightStepChange,
+}: {
+  store: LogbookStore
+  slideIn: boolean
+  weightStepKg: WeightStepKg
+  onWeightStepChange: (step: WeightStepKg) => void
+}) {
   return (
     <PushedScreen title="Settings" slideIn={slideIn}>
+      <WeightStepSection step={weightStepKg} onChange={onWeightStepChange} />
       <BackupSection store={store} />
       <Group title="About">
         <ValueRow name="Version" value={__APP_VERSION__} />
@@ -21,6 +33,48 @@ export function SettingsScreen({ store, slideIn }: { store: LogbookStore; slideI
         <ValueRow name="Build" value={__APP_COMMIT__} />
       </Group>
     </PushedScreen>
+  )
+}
+
+function WeightStepSection({ step, onChange }: { step: WeightStepKg; onChange: (step: WeightStepKg) => void }) {
+  return (
+    <Group
+      title="Weight step"
+      action={step === DEFAULT_WEIGHT_STEP_KG ? (
+        <span aria-hidden className="size-11" />
+      ) : (
+        <button
+          onClick={() => onChange(DEFAULT_WEIGHT_STEP_KG)}
+          aria-label="Reset weight step to 2.5 kg"
+          title="Reset to 2.5 kg"
+          className="motion-safe:animate-reset-appear motion-reduce:animate-fade-in flex size-11 items-center justify-center rounded-full text-tint active:bg-surface-raised"
+        >
+          <RotateCcw size={24} strokeWidth={1.75} aria-hidden />
+        </button>
+      )}
+    >
+      <div role="radiogroup" aria-label="Weight step">
+        {WEIGHT_STEPS_KG.map((option, index) => (
+          <div key={option}>
+            <label className="flex min-h-14 w-full items-center justify-between px-5 text-body active:bg-surface-raised">
+              <input
+                type="radio"
+                name="weight-step"
+                value={option}
+                checked={step === option}
+                onChange={() => onChange(option)}
+                className="peer sr-only"
+              />
+              <span>{option} kg</span>
+              <span aria-hidden className="peer-checked:border-tint peer-checked:bg-tint peer-checked:text-on-tint peer-focus-visible:ring-2 peer-focus-visible:ring-tint flex size-6 items-center justify-center rounded-full border border-label-secondary text-transparent">
+                <Check size={16} strokeWidth={2.25} />
+              </span>
+            </label>
+            {index < WEIGHT_STEPS_KG.length - 1 && <div className="ml-5 border-t border-separator" />}
+          </div>
+        ))}
+      </div>
+    </Group>
   )
 }
 
@@ -121,10 +175,13 @@ const PROBLEMS: Record<BackupProblem, string> = {
 }
 
 // A titled card of rows, with optional small print under it.
-function Group({ title, footer, children }: { title: string; footer?: string; children: ReactNode }) {
+function Group({ title, footer, action, children }: { title: string; footer?: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section className="mt-6 px-5" aria-label={title}>
-      <h2 className="px-1 text-headline">{title}</h2>
+      <div className={`flex items-center justify-between ${action ? 'min-h-11' : ''}`}>
+        <h2 className="px-1 text-headline">{title}</h2>
+        {action}
+      </div>
       <div className="mt-2 overflow-hidden rounded-card bg-surface">{children}</div>
       {footer && <p className="mt-2 px-1 text-footnote text-label-secondary">{footer}</p>}
     </section>

@@ -52,6 +52,7 @@
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --animate-screen-in: screen-in 340ms var(--ease-drawer);
   --animate-fade-in: fade-in 200ms ease-out;
+  --animate-reset-appear: reset-appear 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 
   @keyframes screen-in {
     from {
@@ -61,6 +62,12 @@
   @keyframes fade-in {
     from {
       opacity: 0;
+    }
+  }
+  @keyframes reset-appear {
+    from {
+      opacity: 0;
+      transform: scale(0.88);
     }
   }
 }

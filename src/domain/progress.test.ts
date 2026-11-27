@@ -79,6 +79,12 @@ describe('targets', () => {
     ])
   })
 
+  it('uses the selected 0.5 kg step for target weights', () => {
+    const result = targets([entry('2026-10-01', 75, 10)], 0.5)
+    expect(result?.targets.find((t) => t.reps === 1)?.weightKg).toBe(100.5)
+    expect(result?.targets.find((t) => t.reps === 10)?.weightKg).toBe(75.5)
+  })
+
   it('moves an exact landing up one step', () => {
     // 75 kg × 10 reps is exactly 100 kg, which only matches beat.
     const ten = targets([entry('2026-10-01', 75, 10)])?.targets.find((t) => t.reps === 10)

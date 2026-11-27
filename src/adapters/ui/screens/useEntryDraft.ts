@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { MAX_REPS, MIN_REPS, validateEntry, WEIGHT_LIMIT_KG, type Day, type Entry } from '../../../domain/entry'
 import { estimate1RM } from '../../../domain/progress'
+import { stepWeight, type WeightStepKg } from '../../../domain/weightStep'
 import { formatWeight, warningText } from '../format'
 
 type Field = 'weight' | 'reps'
-
-const WEIGHT_STEP = 2.5
 
 interface Draft {
   day: Day
@@ -18,7 +17,7 @@ interface Draft {
 
 // The entry page's form: one draft for any day. A day that has an entry means editing that entry.
 // `entries` is the exercise's entries, newest first, read live.
-export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
+export function useEntryDraft(entries: readonly Entry[], startDay: Day, weightStepKg: WeightStepKg) {
   const [draft, setDraft] = useState<Draft>({ day: startDay, left: { weight: false, reps: false } })
   const editing = entries.find((entry) => entry.day === draft.day)
   const weight = draft.weight ?? (editing ? formatWeight(editing.weightKg) : '')
@@ -57,11 +56,11 @@ export function useEntryDraft(entries: readonly Entry[], startDay: Day) {
     setWeight,
     setReps,
     // Weight steps stay over 0 and under the limit. Reps stay within 1–12.
-    canLessWeight: weightBase - WEIGHT_STEP > 0,
-    canMoreWeight: weightBase + WEIGHT_STEP < WEIGHT_LIMIT_KG,
+    canLessWeight: weightBase - weightStepKg > 0,
+    canMoreWeight: weightBase + weightStepKg < WEIGHT_LIMIT_KG,
     canLessReps: repsBase > MIN_REPS,
     canMoreReps: repsBase < MAX_REPS,
-    stepWeight: (sign: 1 | -1) => setWeight(formatWeight(weightBase + sign * WEIGHT_STEP)),
+    stepWeight: (sign: 1 | -1) => setWeight(formatWeight(stepWeight(weightBase, sign, weightStepKg))),
     stepReps: (sign: 1 | -1) => setReps(String(Math.min(MAX_REPS, Math.max(MIN_REPS, repsBase + sign)))),
     leave: (field: Field) => setDraft((d) => ({ ...d, left: { ...d.left, [field]: true } })),
     // Tapping a dimmed Save shows what's wrong with both fields.
