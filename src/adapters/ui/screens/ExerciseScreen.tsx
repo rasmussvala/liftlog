@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { exerciseLog, type LogEntry } from '../../../application/entries'
 import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day, Entry } from '../../../domain/entry'
-import { targets } from '../../../domain/progress'
+import { estimate1RM, targets } from '../../../domain/progress'
 import { FloatingPlus } from '../FloatingPlus'
 import { dayLabel, formatEstimate, formatWeight, localToday } from '../format'
 import { Kg } from '../Kg'
@@ -135,32 +135,59 @@ function HistoryRow({ item: { entry, estimated1RM }, today, lit, onOpen }: Histo
   )
 }
 
-// What to lift next: the latest Estimated 1RM, which every Target beats, then one row per rep count, styled like the history rows.
+// One row per rep count; the gain is relative to the latest estimated 1RM.
 function TargetsList({ entries }: { entries: readonly Entry[] }) {
   const table = targets(entries)
   if (!table) return null
   return (
     <div role="tabpanel">
       <p className="mt-4 px-5 text-subhead text-label-secondary">
-        Your latest is {formatEstimate(table.beat)} kg. Lift any of these to beat it.
+        Your latest estimated 1RM is {formatEstimate(table.beat)} kg. Each target beats it.
       </p>
-      {/* Room at the end so the floating + never covers the last row. */}
-      <ul className="mt-2 mb-20 ml-5 tabular-nums">
-        {table.targets.map((t) => (
-          <li
-            key={t.reps}
-            className="flex min-h-11 items-baseline justify-between border-b border-separator py-3 pr-5 last:border-b-0"
-          >
-            <span className="text-body text-label-secondary">
-              {t.reps} {t.reps === 1 ? 'rep' : 'reps'}
-            </span>
-            <span className="text-headline">
-              {formatWeight(t.weightKg)}
-              <Kg />
-            </span>
-          </li>
-        ))}
-      </ul>
+      <table className="mt-2 mb-20 w-full table-fixed border-collapse tabular-nums">
+        <colgroup>
+          <col className="w-[15%]" />
+          <col className="w-[31%]" />
+          <col className="w-[27%]" />
+          <col className="w-[27%]" />
+        </colgroup>
+        <thead>
+          <tr className="border-b border-separator text-footnote text-label-secondary">
+            <th scope="col" className="py-2 pl-5 text-left font-normal">Reps</th>
+            <th scope="col" className="py-2 pr-2 text-right font-normal">Load</th>
+            <th scope="col" className="py-2 pr-2 text-right font-normal">1RM</th>
+            <th scope="col" className="py-2 pr-5 text-right font-normal">Gain</th>
+          </tr>
+        </thead>
+        <tbody>
+          {table.targets.map((target) => {
+            const estimate = estimate1RM(target.weightKg, target.reps)
+            return (
+              <tr key={target.reps} className="h-11 border-b border-separator last:border-b-0">
+                <th scope="row" className="py-2 pl-5 text-left text-subhead font-normal">
+                  {target.reps}
+                </th>
+                <td className="py-2 pr-2 text-right text-headline">
+                  {formatWeight(target.weightKg)}
+                  <Kg />
+                </td>
+                <td className="py-2 pr-2 text-right text-subhead">
+                  {formatEstimate(estimate)}
+                  <Kg />
+                </td>
+                <td className="py-2 pr-5 text-right text-subhead text-label-secondary">
+                  +{formatGain(estimate - table.beat)}
+                  <Kg />
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
+}
+
+function formatGain(kg: number) {
+  return (Math.round(kg * 10) / 10).toFixed(1)
 }
