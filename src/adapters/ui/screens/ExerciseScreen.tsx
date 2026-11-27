@@ -5,7 +5,7 @@ import type { LogbookStore } from '../../../application/logbookStore'
 import type { Day, Entry } from '../../../domain/entry'
 import { estimate1RM, targets } from '../../../domain/progress'
 import { FloatingPlus } from '../FloatingPlus'
-import { dayLabel, formatEstimate, formatWeight, localToday } from '../format'
+import { dayLabel, formatChange, formatEstimate, formatWeight, localToday } from '../format'
 import { Kg } from '../Kg'
 import { ProgressChart } from '../ProgressChart'
 import { PushedScreen } from '../PushedScreen'
@@ -176,7 +176,7 @@ function TargetsList({ entries }: { entries: readonly Entry[] }) {
                   <Kg />
                 </td>
                 <td className="py-2 pr-5 text-right text-subhead text-label-secondary">
-                  +{formatGain(estimate - table.beat)}
+                  {formatChange(estimate - table.beat).text}
                   <Kg />
                 </td>
               </tr>
@@ -186,8 +186,4 @@ function TargetsList({ entries }: { entries: readonly Entry[] }) {
       </table>
     </div>
   )
-}
-
-function formatGain(kg: number) {
-  return (Math.round(kg * 10) / 10).toFixed(1)
 }
